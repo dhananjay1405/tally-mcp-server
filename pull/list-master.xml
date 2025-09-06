@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ENVELOPE>
+    <HEADER>
+        <VERSION>1</VERSION>
+        <TALLYREQUEST>Export</TALLYREQUEST>
+        <TYPE>Data</TYPE>
+        <ID>MyTallyLiveReport</ID>
+    </HEADER>
+    <BODY>
+        <DESC>
+            <STATICVARIABLES>
+                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                <nunjuck>if targetCompany</nunjuck>
+                <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
+                <nunjuck>endif</nunjuck>
+            </STATICVARIABLES>
+            <TDL>
+                <TDLMESSAGE>
+                    <REPORT NAME="MyTallyLiveReport">
+                        <FORMS>MyForm</FORMS>
+                    </REPORT>
+                    <FORM NAME="MyForm">
+                        <PARTS>MyPart01</PARTS>
+                        <XMLTAG>DATA</XMLTAG>
+                    </FORM>
+                    <PART NAME="MyPart01">
+                        <LINES>MyLine01</LINES>
+                        <REPEAT>MyLine01 : MyCollection</REPEAT>
+                        <SCROLLED>Vertical</SCROLLED>
+                    </PART>
+                    <LINE NAME="MyLine01">
+                        <FIELDS>FldName</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <FIELD NAME="FldName">
+                        <SET>$Name</SET>
+                        <XMLTAG>F01</XMLTAG>
+                    </FIELD>
+                    <COLLECTION NAME="MyCollection">
+                        <TYPE>{collection}</TYPE>
+                    </COLLECTION>
+                </TDLMESSAGE>
+            </TDL>
+        </DESC>
+    </BODY>
+</ENVELOPE>

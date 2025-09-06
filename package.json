@@ -1,0 +1,30 @@
+{
+  "name": "tally-mcp-server",
+  "version": "1.0.0",
+  "description": "Tally Prime MCP (Model Context Protocol) Server implementation to feed Tally Prime ERP data to popular LLM like Claude, ChatGPT supporting MCP",
+  "main": "dist/server.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhananjay1405/tally-mcp-server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dhananjay1405/tally-mcp-server/issues"
+  },
+  "homepage": "https://github.com/dhananjay1405/tally-mcp-server#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.2",
+    "express": "^5.1.0",
+    "fast-xml-parser": "^5.2.5",
+    "nunjucks": "^3.2.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.2.1",
+    "@types/nunjucks": "^3.2.6"
+  }
+}

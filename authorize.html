@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticate</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:read-only {
+            background-color: #f9f9f9;
+            color: #666;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #dc3545;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Authenticate</h1>
+        <form id="authForm">
+            <div class="form-group">
+                <label for="clientId">Client ID:</label>
+                <input type="text" id="clientId" name="clientId" readonly>
+            </div>
+            <div class="form-group">
+                <label for="secretCode">Secret Code:</label>
+                <input type="password" id="secretCode" name="secretCode" required>
+            </div>
+            <button type="submit" id="submitBtn">Submit</button>
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            <div id="loadingMessage" class="loading" style="display: none;">Authenticating...</div>
+        </form>
+    </div>
+
+    <script>
+        // Extract query parameters
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                client_id: params.get('client_id'),
+                redirect_uri: params.get('redirect_uri'),
+                state: params.get('state')
+            };
+        }
+
+        // Initialize page
+        function initializePage() {
+            const params = getQueryParams();
+            
+            // Populate client ID field
+            const clientIdField = document.getElementById('clientId');
+            clientIdField.value = params.client_id || '';
+            
+            // Validate required parameters
+            if (!params.client_id || !params.redirect_uri) {
+                showError('Missing required parameters: client_id and redirect_uri');
+                document.getElementById('submitBtn').disabled = true;
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Hide error message
+        function hideError() {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.style.display = 'none';
+        }
+
+        // Show loading state
+        function showLoading() {
+            const loadingDiv = document.getElementById('loadingMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            loadingDiv.style.display = 'block';
+            submitBtn.disabled = true;
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            const loadingDiv = document.getElementById('loadingMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            loadingDiv.style.display = 'none';
+            submitBtn.disabled = false;
+        }
+
+        // Handle form submission
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const params = getQueryParams();
+            const secretCode = document.getElementById('secretCode').value;
+            
+            if (!secretCode.trim()) {
+                showError('Please enter a secret code');
+                return;
+            }
+            
+            hideError();
+            showLoading();
+            
+            try {
+                // Prepare request body
+                const requestBody = {
+                    client_id: params.client_id,
+                    client_secret: secretCode
+                };
+                
+                // Make POST request to /authenticate
+                const response = await fetch('/authenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Handle response
+                if (result.status === true) {
+                    // Success - redirect with code parameter
+                    const redirectUrl = new URL(params.redirect_uri);
+                    redirectUrl.searchParams.set('code', params.client_id);
+                    redirectUrl.searchParams.set('state', params.state);
+                    window.location.href = redirectUrl.toString();
+                } else {
+                    // Failure - redirect with error parameter
+                    const redirectUrl = new URL(params.redirect_uri);
+                    redirectUrl.searchParams.set('error', 'access_denied');
+                    window.location.href = redirectUrl.toString();
+                }
+                
+            } catch (error) {
+                hideLoading();
+                showError('Authentication failed. Please try again.');
+                console.error('Authentication error:', error);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', initializePage);
+        document.getElementById('authForm').addEventListener('submit', handleSubmit);
+        
+        // Allow Enter key to submit form
+        document.getElementById('secretCode').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                handleSubmit(event);
+            }
+        });
+    </script>
+</body>
+</html>

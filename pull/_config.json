@@ -1,0 +1,146 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "description": "Schema for pull reports",
+    "type": "object",
+    "definitions": {
+        "infoInput": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "datatype": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "date",
+                        "boolean"
+                    ]
+                },
+                "validation_regex": {
+                    "type": "string"
+                },
+                "validation_message": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "datatype"
+            ]
+        },
+        "infoField": {
+            "type": "object",
+            "properties": {
+                "identifier": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "datatype": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "date",
+                        "boolean",
+                        "array"
+                    ]
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infoField"
+                    }
+                }
+            },
+            "required": [
+                "identifier",
+                "name",
+                "datatype"
+            ],
+            "if": {
+                "properties": {
+                    "datatype": {
+                        "const": "array"
+                    }
+                }
+            },
+            "then": {
+                "required": [
+                    "fields"
+                ]
+            }
+        },
+        "infoOutput": {
+            "type": "object",
+            "properties": {
+                "datatype": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "date",
+                        "boolean",
+                        "array",
+                        "quantity"
+                    ]
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infoField"
+                    }
+                }
+            },
+            "if": {
+                "properties": {
+                    "datatype": {
+                        "const": "array"
+                    }
+                }
+            },
+            "then": {
+                "required": [
+                    "datatype",
+                    "fields"
+                ]
+            },
+            "else": {
+                "required": [
+                    "datatype"
+                ]
+            }
+        },
+        "infoReport": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "input": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/infoInput"
+                    }
+                },
+                "output": {
+                    "type": "object",
+                    "$ref": "#/definitions/infoOutput"
+                }
+            }
+        }
+    },
+    "properties": {
+        "reports": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "$ref": "#/definitions/infoReport"
+            }
+        }
+    }
+}

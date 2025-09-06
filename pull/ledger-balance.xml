@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ENVELOPE>
+    <HEADER>
+        <VERSION>1</VERSION>
+        <TALLYREQUEST>Export</TALLYREQUEST>
+        <TYPE>Data</TYPE>
+        <ID>MyTallyLiveReport</ID>
+    </HEADER>
+    <BODY>
+        <DESC>
+            <STATICVARIABLES>
+                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                <SVTODATE>{toDate}</SVTODATE>
+                <nunjuck>if targetCompany</nunjuck>
+                <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
+                <nunjuck>endif</nunjuck>
+            </STATICVARIABLES>
+            <TDL>
+                <TDLMESSAGE>
+                    <REPORT NAME="MyTallyLiveReport">
+                        <FORMS>MyForm</FORMS>
+                    </REPORT>
+                    <FORM NAME="MyForm">
+                        <PARTS>MyPart01</PARTS>
+                        <XMLTAG>DATA</XMLTAG>
+                    </FORM>
+                    <PART NAME="MyPart01">
+                        <LINES>MyLine01</LINES>
+                        <REPEAT>MyLine01 : MyCollection</REPEAT>
+                        <SCROLLED>Vertical</SCROLLED>
+                    </PART>
+                    <LINE NAME="MyLine01">
+                        <FIELDS>Fld01</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <FIELD NAME="Fld01">
+                        <SET>if $$IsEmpty:$ClosingBalance then 0 else $$StringFindAndReplace:(if $$IsDebit:$ClosingBalance then -$$Number:$ClosingBalance else $$Number:$ClosingBalance):"(-)":"-"</SET>
+                        <XMLTAG>VALUE</XMLTAG>
+                    </FIELD>
+                    <COLLECTION NAME="MyCollection">
+                        <TYPE>Ledger</TYPE>
+                        <FILTER>FltrLedgerName</FILTER>
+                    </COLLECTION>
+                    <SYSTEM TYPE="Formulae" NAME="FltrLedgerName">$$IsEqual:$Name:"{ledgerName}"</SYSTEM>
+                </TDLMESSAGE>
+            </TDL>
+        </DESC>
+    </BODY>
+</ENVELOPE>

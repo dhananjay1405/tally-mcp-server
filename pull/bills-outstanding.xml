@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ENVELOPE>
+    <HEADER>
+        <VERSION>1</VERSION>
+        <TALLYREQUEST>Export</TALLYREQUEST>
+        <TYPE>Data</TYPE>
+        <ID>MyTallyLiveReport</ID>
+    </HEADER>
+    <BODY>
+        <DESC>
+            <STATICVARIABLES>
+                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                <SVTODATE>{toDate}</SVTODATE>
+                <nunjuck>if targetCompany</nunjuck>
+                <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
+                <nunjuck>endif</nunjuck>
+            </STATICVARIABLES>
+            <TDL>
+                <TDLMESSAGE>
+                    <REPORT NAME="MyTallyLiveReport">
+                        <FORMS>MyForm</FORMS>
+                    </REPORT>
+                    <FORM NAME="MyForm">
+                        <PARTS>MyPart01</PARTS>
+                        <XMLTAG>DATA</XMLTAG>
+                    </FORM>
+                    <PART NAME="MyPart01">
+                        <LINES>MyLine01</LINES>
+                        <REPEAT>MyLine01 : MyCollection</REPEAT>
+                        <SCROLLED>Vertical</SCROLLED>
+                    </PART>
+                    <LINE NAME="MyLine01">
+                        <FIELDS>FldBillDate,FldBillRef,FldBillAmount,FldPartyName,FldOverDueDays</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <FIELD NAME="FldBillDate">
+                        <SET>if $$IsEmpty:$BillDate then "" else $$PyrlYYYYMMDDFormat:$BillDate:"-"</SET>
+                        <XMLTAG>F01</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldBillRef">
+                        <SET>$Name</SET>
+                        <XMLTAG>F02</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldBillAmount">
+                        <SET>$$StringFindAndReplace:(if $$IsDebit:$ClosingBalance then -$$NumValue:$ClosingBalance else $$NumValue:$ClosingBalance):"(-)":"-"</SET>
+                        <XMLTAG>F03</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldPartyName">
+                        <SET>$Parent</SET>
+                        <XMLTAG>F04</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldOverDueDays">
+                        <SET>$$Number:$_OverDueDays</SET>
+                        <XMLTAG>F05</XMLTAG>
+                    </FIELD>
+                    <COLLECTION NAME="MyCollection">
+                        <TYPE>Bill</TYPE>
+                        <FILTER>FilterNature</FILTER>
+                    </COLLECTION>
+                    <nunjuck>set regExp = r/(r|R|receivable|Receivable|RECEIVABLE)/g</nunjuck>
+                    <nunjuck>if regExp.test('{nature}')</nunjuck>
+                    <SYSTEM TYPE="Formulae" NAME="FilterNature">$$IsEqual:($_PrimaryGroup:Group:($Parent:Ledger:$Parent)):"Sundry Debtors"</SYSTEM>
+                    <nunjuck>else</nunjuck>
+                    <SYSTEM TYPE="Formulae" NAME="FilterNature">$$IsEqual:($_PrimaryGroup:Group:($Parent:Ledger:$Parent)):"Sundry Creditors"</SYSTEM>
+                    <nunjuck>endif</nunjuck>
+                </TDLMESSAGE>
+            </TDL>
+        </DESC>
+    </BODY>
+</ENVELOPE>

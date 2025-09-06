@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ENVELOPE>
+    <HEADER>
+        <VERSION>1</VERSION>
+        <TALLYREQUEST>Export</TALLYREQUEST>
+        <TYPE>Data</TYPE>
+        <ID>MyTallyLiveReport</ID>
+    </HEADER>
+    <BODY>
+        <DESC>
+            <STATICVARIABLES>
+                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                <SVFROMDATE>{fromDate}</SVFROMDATE>
+                <SVTODATE>{toDate}</SVTODATE>
+                <nunjuck>if targetCompany</nunjuck>
+                <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
+                <nunjuck>endif</nunjuck>
+            </STATICVARIABLES>
+            <TDL>
+                <TDLMESSAGE>
+                    <REPORT NAME="MyTallyLiveReport">
+                        <FORMS>MyForm</FORMS>
+                    </REPORT>
+                    <FORM NAME="MyForm">
+                        <PARTS>MyPart01</PARTS>
+                        <XMLTAG>DATA</XMLTAG>
+                    </FORM>
+                    <PART NAME="MyPart01">
+                        <LINES>MyLine01</LINES>
+                        <REPEAT>MyLine01 : MyCollection</REPEAT>
+                        <SCROLLED>Vertical</SCROLLED>
+                    </PART>
+                    <LINE NAME="MyLine01">
+                        <FIELDS>Fld01,Fld02,Fld03,Fld04,Fld05,Fld06,Fld07</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <FIELD NAME="Fld01">
+                        <SET>$Date</SET>
+                        <XMLTAG>F01</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld02">
+                        <SET>$VoucherTypeName</SET>
+                        <XMLTAG>F02</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld03">
+                        <SET>$VoucherNumber</SET>
+                        <XMLTAG>F03</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld04">
+                        <SET>$PartyLedgerName</SET>
+                        <XMLTAG>F04</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld05">
+                        <SET>if $$IsInwards:$StkQuantity then $$Number:$StkQuantity else -$$Number:$StkQuantity</SET>
+                        <XMLTAG>F05</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld06">
+                        <SET>$StkAmount</SET>
+                        <XMLTAG>F06</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld07">
+                        <SET>$Narration</SET>
+                        <XMLTAG>F07</XMLTAG>
+                    </FIELD>
+                    <COLLECTION NAME="MyCollection">
+                        <TYPE>Voucher</TYPE>
+                        <FETCH>Narration,PartyLedgerName,AllInventoryEntries</FETCH>
+                        <FILTER>FilterVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
+                    </COLLECTION>
+                    <SYSTEM TYPE="Formulae" NAME="FilterVch">$$FilterCount:AllInventoryEntries:FilterVchLedger = 1</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterVchLedger">$$IsEqual:$StockItemName:"{stockItem}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="StkQuantity">$$FilterValue:$ActualQty:AllInventoryEntries:First:FilterVchLedger</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="StkAmount">$$FilterValue:$Amount:AllInventoryEntries:First:FilterVchLedger</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterOptionalVouchers">NOT $IsOptional</SYSTEM>
+                </TDLMESSAGE>
+            </TDL>
+        </DESC>
+    </BODY>
+</ENVELOPE>
