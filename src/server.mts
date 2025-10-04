@@ -221,8 +221,6 @@ app.post('/register', (req, res) => {
     redirect_uris: redirectUris
   };
 
-  console.log(`Registered new client:\nclient_id=${clientId}\nclient_name=${clientName}\nredirect_uris=${redirectUris.join(', ')}`);
-
   res.status(200).json({
     client_id: clientId,
     client_name: clientName,
@@ -239,7 +237,6 @@ app.post('/authorize', (req, res) => {
   const password = req.body['password'];
 
   if (!clientId || !password) {
-    console.log(`Missing client_id or password\nclient_id=${clientId}\npassword=${password}`);
     return res.status(400).json({ error: 'Missing client_id or password' });
   }
 
@@ -258,12 +255,10 @@ app.post('/authorize', (req, res) => {
       code_challenge_method: codeChallengeMethod,
       expires_at: Date.now() + 600000 // 10 minutes
     };
-    console.log(`Authorization successful\ncode=${code}\nclient_id=${clientId}\nredirect_uri=${redirectUri}\ncode_challenge=${codeChallenge}\ncode_challenge_method=${codeChallengeMethod}`);
     res.status(200).json({ status: isValidated, code });
     
   }
   else {
-    console.log('Authorization failed for client:');
     res.status(200).json({ status: isValidated, code: undefined });
   }
 
@@ -343,7 +338,6 @@ app.post('/token', (req, res) => {
 
   // Validate grant type
   if (grantType !== 'authorization_code') {
-    console.log('Unsupported grant type:', grantType);
     return res.status(400).json({
       error: 'unsupported_grant_type',
       error_description: 'Only authorization_code grant type is supported'
@@ -352,7 +346,6 @@ app.post('/token', (req, res) => {
 
   // Validate required parameters
   if (!code || !redirectUri || !clientId || !codeVerifier) {
-    console.log(`Missing required parameters\ncode=${code}\nclient_id=${clientId}\nredirect_uri=${redirectUri}\ncode_verifier=${codeVerifier}`);
     return res.status(400).json({
       error: 'invalid_request',
       error_description: 'Missing required parameters'
@@ -362,7 +355,6 @@ app.post('/token', (req, res) => {
   // Validate authorization code
   const authCode = authorizationCodes[code];
   if (!authCode) {
-    
     return res.status(400).json({
       error: 'invalid_grant',
       error_description: 'Invalid or expired authorization code'
@@ -371,7 +363,6 @@ app.post('/token', (req, res) => {
 
   // Check expiration
   if (authCode.expires_at < Date.now()) {
-    console.log('Authorization code expired');
     delete authorizationCodes[code];
     return res.status(400).json({
       error: 'invalid_grant',
@@ -381,7 +372,6 @@ app.post('/token', (req, res) => {
 
   // Validate client and redirect URI match
   if (authCode.client_id !== clientId || authCode.redirect_uri !== redirectUri) {
-    console.log('Authorization code mismatch');
     return res.status(400).json({
       error: 'invalid_grant',
       error_description: 'Authorization code mismatch'
@@ -390,7 +380,6 @@ app.post('/token', (req, res) => {
 
   // Verify PKCE
   if (!verifyPKCE(codeVerifier, authCode.code_challenge, authCode.code_challenge_method)) {
-    console.log('Invalid code verifier');
     return res.status(400).json({
       error: 'invalid_grant',
       error_description: 'Invalid code verifier'
