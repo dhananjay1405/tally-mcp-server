@@ -7,23 +7,78 @@ import { registerMcpServer } from './mcp.mjs'
 
 const mcpPort = parseInt(process.env.PORT || '3000');
 const mcpDomain = process.env.MCP_DOMAIN || 'http://localhost:3000';
-
 const __dirname = import.meta.dirname;
-let lstAuthenticatedClientID : string[] = [];
-let lstAccessToken: string[] = [];
-
-const authPassword = process.env.CLIENT_SECRET || 'password';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const authPassword = process.env.PASSWORD || 'password';
+
+interface RegisteredClient {
+  client_id: string;
+  client_name: string;
+  client_secret: string;
+  redirect_uris: string[];
+}
+
+interface AuthorizationCode {
+  code: string;
+  client_id: string;
+  redirect_uri: string;
+  code_challenge: string;
+  code_challenge_method: string;
+  expires_at: number;
+}
+
+interface AccessToken {
+  token: string;
+  client_id: string;
+  expires_at: number;
+}
+
+const registeredClients: { [client_id: string]: RegisteredClient } = {};
+const authorizationCodes: { [code: string]: AuthorizationCode } = {};
+const accessTokens: { [token: string]: AccessToken } = {};
+
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+
+// Helper function to generate secure tokens
+const generateSecureToken = (bytes: number = 32): string => {
+  return crypto.randomBytes(bytes).toString('base64url');
+};
+
+// Helper function to verify PKCE
+const verifyPKCE = (verifier: string, challenge: string, method: string): boolean => {
+  if (method !== 'S256') return false;
+
+  const hash = crypto.createHash('sha256').update(verifier).digest('base64url');
+  return hash === challenge;
+};
+
+// Cleanup expired items periodically
+setInterval(() => {
+  const now = Date.now();
+
+  // Clean expired auth codes
+  for (const [code, data] of Object.entries(authorizationCodes)) {
+    if (data.expires_at < now) {
+      delete authorizationCodes[code];
+    }
+  }
+
+  // Clean expired access tokens
+  for (const [token, data] of Object.entries(accessTokens)) {
+    if (data.expires_at < now) {
+      delete accessTokens[token];
+    }
+  }
+
+}, 60000); // Run every minute
 
 
 // Handle POST requests for client-to-server communication
-app.post('/mcp', async (req, res) => {
-
+const handleMcpRequest = async (req: express.Request, res: express.Response) => {
   const handleUnauthorized = () => {
     res.status(401).json({
       jsonrpc: '2.0',
@@ -41,14 +96,16 @@ app.post('/mcp', async (req, res) => {
     handleUnauthorized()
     return;
   }
-  else {
-    // extract token
-    const token = authHeader.split(' ')[1];
-    if (!lstAccessToken.includes(token)) {
-      handleUnauthorized();
-      return;
-    }
+
+  // Extract and validate token
+  const token = authHeader.split(' ')[1];
+  const tokenData = accessTokens[token];
+
+  if (!tokenData || tokenData.expires_at < Date.now()) {
+    handleUnauthorized();
+    return;
   }
+
 
   // Check for existing session ID
   const sessionId = req.headers['mcp-session-id'] as string | undefined;
@@ -69,7 +126,7 @@ app.post('/mcp', async (req, res) => {
       // DNS rebinding protection is disabled by default for backwards compatibility. If you are running this server
       // locally, make sure to set:
       // enableDnsRebindingProtection: true,
-       allowedHosts: [mcpDomain],
+      allowedHosts: [mcpDomain],
     });
 
     // Clean up transport when closed
@@ -98,7 +155,9 @@ app.post('/mcp', async (req, res) => {
 
   // Handle the request
   await transport.handleRequest(req, res, req.body);
-});
+}
+
+app.post('/mcp', handleMcpRequest);
 
 // Reusable handler for GET and DELETE requests
 const handleSessionRequest = async (req: express.Request, res: express.Response) => {
@@ -138,7 +197,7 @@ app.get('/.well-known/oauth-authorization-server', (req, res) => {
       response_types_supported: ['code'],
       response_mode_supported: ['query'],
       grant_types_supported: ['authorization_code'],
-      token_endpoint_auth_methods_supported: ['client-secret-basic'],
+      token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post'],
       code_challenge_methods_supported: ['S256']
     }
   );
@@ -146,64 +205,217 @@ app.get('/.well-known/oauth-authorization-server', (req, res) => {
 
 
 app.post('/register', (req, res) => {
-  let clientId = crypto.randomBytes(8).toString('hex');
-  
+  const clientId = generateSecureToken(16);
+  const clientSecret = generateSecureToken(32);
+  const clientName = req.body['client_name'] || 'Unnamed Client';
+  const redirectUris = req.body['redirect_uris'] || [];
+
+  if (!Array.isArray(redirectUris) || redirectUris.length === 0) {
+    return res.status(400).json({ error: 'redirect_uris must be a non-empty array' });
+  }
+
+  registeredClients[clientId] = {
+    client_id: clientId,
+    client_name: clientName,
+    client_secret: clientSecret,
+    redirect_uris: redirectUris
+  };
+
+  console.log(`Registered new client:\nclient_id=${clientId}\nclient_name=${clientName}\nredirect_uris=${redirectUris.join(', ')}`);
+
   res.status(200).json({
     client_id: clientId,
-    clientName: req.body['client_name'] || '',
-    redirect_uris: req.body['redirect_uris'] || ''
+    client_name: clientName,
+    client_secret: clientSecret,
+    redirect_uris: redirectUris
   });
 });
 
-app.post('/authenticate', (req, res) => {
+app.post('/authorize', (req, res) => {
   const clientId = req.body['client_id'];
-  const clientSecret = req.body['client_secret'];
+  const redirectUri = req.body['redirect_uri'];
+  const codeChallenge = req.body['code_challenge'];
+  const codeChallengeMethod = req.body['code_challenge_method'];
+  const password = req.body['password'];
 
-  if (!clientId || !clientSecret) {
-    return res.status(400).json({ error: 'Missing client_id or client_secret' });
+  if (!clientId || !password) {
+    console.log(`Missing client_id or password\nclient_id=${clientId}\npassword=${password}`);
+    return res.status(400).json({ error: 'Missing client_id or password' });
   }
 
   // Validate client credentials
-  let isValidated = (clientSecret == authPassword);
+  let isValidated = (password == authPassword);
 
   if (isValidated) {
-    // add token to authenticated array
-    lstAuthenticatedClientID.push(clientId);
-    setTimeout(() => {
-      lstAuthenticatedClientID = lstAuthenticatedClientID.filter(id => id !== clientId);
-    }, 300000);
+    // Generate authorization code
+    const code = generateSecureToken(32);
+    
+    authorizationCodes[code] = {
+      code,
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      code_challenge: codeChallenge,
+      code_challenge_method: codeChallengeMethod,
+      expires_at: Date.now() + 600000 // 10 minutes
+    };
+    console.log(`Authorization successful\ncode=${code}\nclient_id=${clientId}\nredirect_uri=${redirectUri}\ncode_challenge=${codeChallenge}\ncode_challenge_method=${codeChallengeMethod}`);
+    res.status(200).json({ status: isValidated, code });
+    
+  }
+  else {
+    console.log('Authorization failed for client:');
+    res.status(200).json({ status: isValidated, code: undefined });
   }
 
-  res.status(200).json({ status: isValidated });
 });
 
 app.get('/authorize', async (req, res) => {
+  const clientId = req.query.client_id as string;
+  const redirectUri = req.query.redirect_uri as string;
+  const codeChallenge = req.query.code_challenge as string;
+  const codeChallengeMethod = req.query.code_challenge_method as string;
+  const responseType = req.query.response_type as string;
+
+  // Validate required parameters
+  if (!clientId || !redirectUri || !codeChallenge || !responseType) {
+    return res.status(400).json({
+      error: 'invalid_request',
+      error_description: 'Missing required parameters'
+    });
+  }
+
+  if (responseType !== 'code') {
+    return res.status(400).json({
+      error: 'unsupported_response_type',
+      error_description: 'Only "code" response type is supported'
+    });
+  }
+
+  if (codeChallengeMethod !== 'S256') {
+    return res.status(400).json({
+      error: 'invalid_request',
+      error_description: 'Only S256 code challenge method is supported'
+    });
+  }
+
+  // Validate client
+  const client = registeredClients[clientId];
+  if (!client) {
+    return res.status(400).json({
+      error: 'invalid_client',
+      error_description: 'Unknown client_id'
+    });
+  }
+
+  // Validate redirect URI
+  if (!client.redirect_uris.includes(redirectUri)) {
+    return res.status(400).json({
+      error: 'invalid_request',
+      error_description: 'Invalid redirect_uri'
+    });
+  }
+
   res.status(200).header('Content-Type', 'text/html').sendFile(path.join(__dirname, '../authorize.html'));
 });
 
 app.post('/token', (req, res) => {
-  // BODY PARSER required with url-encoded form data parsing
-  let clientId = req.body['code'];
-  if (!clientId || !lstAuthenticatedClientID.includes(clientId)) {
-    res.status(400).json({ error: 'Invalid access code' });
-    return;
-  }
-  else {
-    let accessToken = crypto.randomBytes(8).toString('hex');
-    lstAccessToken.push(accessToken);
-    
-    // remove access token after 60 min
-    setTimeout(() => {
-      lstAccessToken = lstAccessToken.filter(token => token !== accessToken);
-    }, 3600000);
 
-    res.json({
-      access_token: accessToken,
-      expires_in: 3600,
-      token_type: 'Bearer',
-      refresh_token: accessToken
+  const grantType = req.body['grant_type'];
+  const code = req.body['code'];
+  const redirectUri = req.body['redirect_uri'];
+  let clientId = req.body['client_id'];
+  const codeVerifier = req.body['code_verifier'];
+
+  if(!clientId) {
+    //check for client authentication in Authorization header
+    const authHeader = req.headers['authorization'] as string | undefined;
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+      return res.status(401).json({
+        error: 'invalid_client',
+        error_description: 'No client authentication provided'
+      });
+    }
+    const base64Credentials = authHeader.split(' ')[1];
+    const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
+    const [authClientId, authClientSecret] = credentials.split(':');
+    clientId = authClientId;
+  }
+
+  // Validate grant type
+  if (grantType !== 'authorization_code') {
+    console.log('Unsupported grant type:', grantType);
+    return res.status(400).json({
+      error: 'unsupported_grant_type',
+      error_description: 'Only authorization_code grant type is supported'
     });
   }
+
+  // Validate required parameters
+  if (!code || !redirectUri || !clientId || !codeVerifier) {
+    console.log(`Missing required parameters\ncode=${code}\nclient_id=${clientId}\nredirect_uri=${redirectUri}\ncode_verifier=${codeVerifier}`);
+    return res.status(400).json({
+      error: 'invalid_request',
+      error_description: 'Missing required parameters'
+    });
+  }
+
+  // Validate authorization code
+  const authCode = authorizationCodes[code];
+  if (!authCode) {
+    
+    return res.status(400).json({
+      error: 'invalid_grant',
+      error_description: 'Invalid or expired authorization code'
+    });
+  }
+
+  // Check expiration
+  if (authCode.expires_at < Date.now()) {
+    console.log('Authorization code expired');
+    delete authorizationCodes[code];
+    return res.status(400).json({
+      error: 'invalid_grant',
+      error_description: 'Authorization code expired'
+    });
+  }
+
+  // Validate client and redirect URI match
+  if (authCode.client_id !== clientId || authCode.redirect_uri !== redirectUri) {
+    console.log('Authorization code mismatch');
+    return res.status(400).json({
+      error: 'invalid_grant',
+      error_description: 'Authorization code mismatch'
+    });
+  }
+
+  // Verify PKCE
+  if (!verifyPKCE(codeVerifier, authCode.code_challenge, authCode.code_challenge_method)) {
+    console.log('Invalid code verifier');
+    return res.status(400).json({
+      error: 'invalid_grant',
+      error_description: 'Invalid code verifier'
+    });
+  }
+
+  // Delete the used authorization code
+  delete authorizationCodes[code];
+
+  // Generate access token
+  const accessToken = generateSecureToken(32);
+  const expiresIn = 3600; // 1 hour
+
+  accessTokens[accessToken] = {
+    token: accessToken,
+    client_id: clientId,
+    expires_at: Date.now() + (expiresIn * 1000)
+  };
+
+  res.json({
+    access_token: accessToken,
+    token_type: 'Bearer',
+    expires_in: expiresIn,
+    refresh_token: accessToken
+  });
 });
 
 // Start MCP Server listener

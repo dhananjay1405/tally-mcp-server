@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/dhananjay1405/tally-mcp-server#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.2",
+    "@modelcontextprotocol/sdk": "^1.18.2",
     "express": "^5.1.0",
     "fast-xml-parser": "^5.2.5",
     "nunjucks": "^3.2.4"

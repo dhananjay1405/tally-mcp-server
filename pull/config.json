@@ -272,7 +272,7 @@
             }
         },
         {
-            "name": "account-ledger",
+            "name": "ledger-account",
             "input": [
                 {
                     "name": "fromDate",
@@ -307,7 +307,7 @@
                     },
                     {
                         "identifier": "F04",
-                        "name": "ledger",
+                        "name": "party_ledger",
                         "datatype": "string"
                     },
                     {
@@ -319,6 +319,16 @@
                         "identifier": "F06",
                         "name": "narration",
                         "datatype": "string"
+                    },
+                    {
+                        "identifier": "F07",
+                        "name": "reference_number",
+                        "datatype": "string"
+                    },
+                    {
+                        "identifier": "F08",
+                        "name": "reference_date",
+                        "datatype": "date"
                     }
                 ]
             }
@@ -564,6 +574,10 @@
         {
             "name": "purchase-sales-voucher",
             "input": [
+                {
+                    "name": "nature",
+                    "datatype": "string"
+                },
                 {
                     "name": "fromDate",
                     "datatype": "date"

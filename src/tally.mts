@@ -21,6 +21,27 @@ nunjucks.configure({
     }
 });
 
+export function jsonToTSV(data: any[]): string {
+    if (!data || data.length == 0)
+        return '';
+    let headers = Object.keys(data[0]);
+    let tsv = headers.join('\t') + '\n';
+    data.forEach(row => {
+        let values = headers.map(header => {
+            let value = row[header];
+            if (typeof value === 'string') {
+                value = value.replace(/\t/g, ' ').replace(/\n/g, ' ');
+            }
+            else if(typeof value === 'object' && value instanceof Date) {
+                value = utility.Date.format(value, 'yyyy-MM-dd');
+            }
+            return value;
+        });
+        tsv += values.join('\t') + '\n';
+    });
+    return tsv;
+}
+
 export function handlePull(targetReport: string, inputParams: Map<string, any>): Promise<m.ModelPullResponse> {
     return new Promise<m.ModelPullResponse>(async (resolve, reject) => {
         let retval: m.ModelPullResponse = {

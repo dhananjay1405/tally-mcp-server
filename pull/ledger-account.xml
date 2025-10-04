@@ -31,7 +31,8 @@
                         <SCROLLED>Vertical</SCROLLED>
                     </PART>
                     <LINE NAME="MyLine01">
-                        <FIELDS>FldDate,FldVoucherType,FldVoucherNumber,FldLedgerName,FldAmount,FldNarration</FIELDS>
+                        <FIELDS>FldDate,FldVoucherType,FldVoucherNumber,FldPartyLedger,FldAmount,FldNarration</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <FIELD NAME="FldDate">
                         <SET>$Date</SET>
@@ -45,27 +46,32 @@
                         <SET>$VoucherNumber</SET>
                         <XMLTAG>F03</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="FldLedgerName">
-                        <SET>$AllLedgerEntries.LedgerName</SET>
+                    <FIELD NAME="FldPartyLedger">
+                        <SET>$PartyLedgerName</SET>
                         <XMLTAG>F04</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldAmount">
-                        <SET>if $$IsDebit:$LgrAmount then -$LgrAmount else $LgrAmount</SET>
+                        <SET>$$StringFindAndReplace:(if $$IsDebit:$Amount then -$$NumValue:$Amount else $$NumValue:$Amount}):"(-)":"-"</SET>
                         <XMLTAG>F05</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarration">
                         <SET>$Narration</SET>
                         <XMLTAG>F06</XMLTAG>
                     </FIELD>
+                    <FIELD NAME="FldReferenceNumber">
+                        <SET>$Reference</SET>
+                        <XMLTAG>F07</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldReferenceDate">
+                        <SET>$ReferenceDate</SET>
+                        <XMLTAG>F08</XMLTAG>
+                    </FIELD>
                     <COLLECTION NAME="MyCollection">
                         <TYPE>Voucher</TYPE>
                         <FETCH>Narration,AllLedgerEntries</FETCH>
-                        <FILTER>FilterVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
+                        <FILTER>FilterVchLedger,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
-                    <SYSTEM TYPE="Formulae" NAME="FilterVch">$$FilterCount:AllLedgerEntries:FilterVchLedger > 0</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterVchLedger">$$IsEqual:$LedgerName:"{ledgerName}"</SYSTEM>
-                    <SYSTEM TYPE="Formulae" NAME="FilterVch">$$FilterCount:AllLedgerEntries:FilterVchLedger > 0</SYSTEM>
-                    <SYSTEM TYPE="Formulae" NAME="LgrAmount">$$FilterValue:$Amount:AllLedgerEntries:First:FilterVchLedger</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterOptionalVouchers">NOT $IsOptional</SYSTEM>
                 </TDLMESSAGE>

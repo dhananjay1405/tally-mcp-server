@@ -18,7 +18,16 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v1.zip](https://excelkida.com/resource/tally-mcp-server-v1.zip)
+[https://excelkida.com/resource/tally-mcp-server-v2.zip](https://excelkida.com/resource/tally-mcp-server-v2.zip)
+
+## Supported Platform
+Implementation was tested on below AI platform
+
+|Platform|Local|Remote|
+|--|--|--|
+|Claude AI| :heavy_check_mark: | :heavy_check_mark: |
+|ChatGPT|| :heavy_check_mark: |
+
 
 ## Setup (Local)
 This mode of setup is to be used when MCP Client (like Claude Desktop, Perplexity etc.) and Tally Prime both exists in local PC. MCP Client software itself runs the MCP Server internally in such scenario.
@@ -141,6 +150,27 @@ Closing Balance of ledger (if exists)
 
 Note: If specified ledger does not exists, LLM might invoke list-master tool to fetch list of ledgers. It will attempt to find closest possible ledger name for this list and re-run this action. This might produce un-predictable response.
 
+### ledger-account
+Extracts ledger account for the specified ledger for the given period
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
+|ledgerName|Ledger of which to query balance|
+|fromDate|period start date|
+|toDate|period end date|
+
+**Output**
+Tabular output with columns as below
+
+|Column|Description|
+|--|--|
+|date|Date of voucher|
+|voucher_type|Voucher Type|
+|voucher_number|Voucher Number|
+|amount|Amount (negative = Debit / positive = Credit)|
+|narration|Narration or Remarks of voucher|
 
 ### stock-item-balance
 Returns available quantity of stock item as on specified date

@@ -17,6 +17,26 @@ nunjucks.configure({
         commentEnd: '<comment>end</comment>'
     }
 });
+export function jsonToTSV(data) {
+    if (!data || data.length == 0)
+        return '';
+    let headers = Object.keys(data[0]);
+    let tsv = headers.join('\t') + '\n';
+    data.forEach(row => {
+        let values = headers.map(header => {
+            let value = row[header];
+            if (typeof value === 'string') {
+                value = value.replace(/\t/g, ' ').replace(/\n/g, ' ');
+            }
+            else if (typeof value === 'object' && value instanceof Date) {
+                value = utility.Date.format(value, 'yyyy-MM-dd');
+            }
+            return value;
+        });
+        tsv += values.join('\t') + '\n';
+    });
+    return tsv;
+}
 export function handlePull(targetReport, inputParams) {
     return new Promise(async (resolve, reject) => {
         let retval = {

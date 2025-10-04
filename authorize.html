@@ -83,8 +83,8 @@
                 <input type="text" id="clientId" name="clientId" readonly>
             </div>
             <div class="form-group">
-                <label for="secretCode">Secret Code:</label>
-                <input type="password" id="secretCode" name="secretCode" required>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
             </div>
             <button type="submit" id="submitBtn">Submit</button>
             <div id="errorMessage" class="error" style="display: none;"></div>
@@ -99,7 +99,9 @@
             return {
                 client_id: params.get('client_id'),
                 redirect_uri: params.get('redirect_uri'),
-                state: params.get('state')
+                state: params.get('state'),
+                codeChallenge: params.get('code_challenge'),
+                codeChallengeMethod: params.get('code_challenge_method')
             };
         }
 
@@ -152,9 +154,9 @@
             event.preventDefault();
             
             const params = getQueryParams();
-            const secretCode = document.getElementById('secretCode').value;
+            const password = document.getElementById('password').value;
             
-            if (!secretCode.trim()) {
+            if (!password.trim()) {
                 showError('Please enter a secret code');
                 return;
             }
@@ -166,11 +168,14 @@
                 // Prepare request body
                 const requestBody = {
                     client_id: params.client_id,
-                    client_secret: secretCode
+                    redirect_uri: params.redirect_uri,
+                    code_challenge: params.codeChallenge,
+                    code_challenge_method: params.codeChallengeMethod,
+                    password: password
                 };
-                
-                // Make POST request to /authenticate
-                const response = await fetch('/authenticate', {
+
+                // Make POST request to /authorize
+                const response = await fetch('/authorize', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -188,7 +193,7 @@
                 if (result.status === true) {
                     // Success - redirect with code parameter
                     const redirectUrl = new URL(params.redirect_uri);
-                    redirectUrl.searchParams.set('code', params.client_id);
+                    redirectUrl.searchParams.set('code', result.code);
                     redirectUrl.searchParams.set('state', params.state);
                     window.location.href = redirectUrl.toString();
                 } else {
@@ -210,7 +215,7 @@
         document.getElementById('authForm').addEventListener('submit', handleSubmit);
         
         // Allow Enter key to submit form
-        document.getElementById('secretCode').addEventListener('keypress', function(event) {
+        document.getElementById('password').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 handleSubmit(event);
             }

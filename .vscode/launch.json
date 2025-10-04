@@ -19,8 +19,8 @@
                 "${workspaceFolder}/**/*.mjs"
             ],
             "env": {
-                "CLIENT_SECRET": "password",
-                "MCP_DOMAIN": "https://dbqad-2409-40c2-4009-ef5c-8b6-7e33-144a-40db.a.free.pinggy.link"
+                "PASSWORD": "password",
+                "MCP_DOMAIN": "https://example.com"
             }
         }
     ]

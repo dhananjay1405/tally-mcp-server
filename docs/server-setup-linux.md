@@ -105,7 +105,7 @@ Tally MCP server can be accessed by anyone publicly over the web, it is protecte
 Assuming client_secret is **8LszTe5T** , domain is **example.com** and mcp server is extracted in location **/home/user/tally_mcp_server** , cd into the location and run it using below command.
 
 ```bash
-CLIENT_SECRET=8LszTe5T MCP_DOMAIN=https://example.com node dist/server.mjs
+PASSWORD=8LszTe5T MCP_DOMAIN=https://example.com node dist/server.mjs
 ```
 
 This will start back facing Tally MCP Server, which receives request from front facing Nginx and communicate to Tally Prime via SSH tunnel. Manually running above command from linux terminal should be used only for testing purpose. On closing of linux terminal, MCP server launched by above command will be stopped. Kindly use process manager like [PM2 for Node JS](https://pm2.keymetrics.io/) to keep MCP server running.
@@ -133,7 +133,7 @@ If correct secret code is entered, then it should redirect back with MCP server 
 ![Claude AI Tally MCP Server connected status](https://excelkida.com/image/github/claude-ai-tally-mcp-server-connected-status.png)
 
 ### ChatGPT
-ChatGPT support for connecting to custom connectors (i.e. MCP Server) is available only for Business and Enterprise plans. In the absense of the above plans, testing could not be done. Kindly take the help of YouTube tutorials &amp; blog for this. Refer to Claude AI example above for the URL to be entered, which is same for all clients.
+ChatGPT support for connecting to custom connectors (i.e. MCP Server) is available only for Plus, Pro, Business and Enterprise plans.
 
 
 ### Microsoft Copilot
