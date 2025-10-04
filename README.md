@@ -208,3 +208,9 @@ Tabular output with columns as below
 |outstanding_amount|Pending amount as on date|
 |party_name|Ledger name of the party|
 |overdue_days|Count of days by which invoice is overdue|
+
+## Contact
+Project developed & maintained by: **Dhananjay Gokhale**
+
+Email: **info@excelkida.com** <br>
+Whatsapp: **(+91) 90284-63366**
