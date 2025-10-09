@@ -69,9 +69,11 @@
                     <COLLECTION NAME="MyCollection">
                         <TYPE>Voucher</TYPE>
                         <FETCH>Narration,AllLedgerEntries</FETCH>
-                        <FILTER>FilterVchLedger,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
+                        <FILTER>FilterVchLedger,FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
                     <SYSTEM TYPE="Formulae" NAME="FilterVchLedger">$$IsEqual:$LedgerName:"{ledgerName}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterExcludeInventoryVch">NOT $$IsInventoryVch:$VoucherTypeName</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterOptionalVouchers">NOT $IsOptional</SYSTEM>
                 </TDLMESSAGE>

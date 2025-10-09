@@ -126,28 +126,31 @@ const handleSessionRequest = async (req, res) => {
 app.get('/mcp', handleSessionRequest);
 // Handle DELETE requests for session termination
 app.delete('/mcp', handleSessionRequest);
-app.get('/.well-known/oauth-protected-resource/mcp', (req, res) => {
+const handleOAuthProtectedResource = (req, res) => {
     res.status(200).json({
         resource: `${mcpDomain}/mcp`,
         authorization_servers: [`${mcpDomain}`],
         bearer_methods_supported: ['header'],
         scopes_supported: ['email']
     });
-});
-// Handle OAuth Authorization Server
-app.get('/.well-known/oauth-authorization-server', (req, res) => {
+};
+app.get('/.well-known/oauth-protected-resource', handleOAuthProtectedResource);
+app.get('/.well-known/oauth-protected-resource/mcp', handleOAuthProtectedResource);
+const handleOAuthAuthorizationServer = (req, res) => {
     res.status(200).json({
         issuer: mcpDomain,
         authorization_endpoint: `${mcpDomain}/authorize`,
         token_endpoint: `${mcpDomain}/token`,
         registration_endpoint: `${mcpDomain}/register`,
         response_types_supported: ['code'],
-        response_mode_supported: ['query'],
+        response_modes_supported: ['query'],
         grant_types_supported: ['authorization_code'],
         token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post'],
         code_challenge_methods_supported: ['S256']
     });
-});
+};
+// Handle OAuth Authorization Server
+app.get('/.well-known/oauth-authorization-server', handleOAuthAuthorizationServer);
 app.post('/register', (req, res) => {
     const clientId = generateSecureToken(16);
     const clientSecret = generateSecureToken(32);

@@ -166,7 +166,7 @@ function postTallyXML(xml: string): Promise<string> {
 function substituteTDLParameters(msg: string, substitutions: Map<string, any>): string {
     let retval = msg;
     substitutions.forEach((v, k) => {
-        let regPtrn = new RegExp(`\\{${k}\\}`);
+        let regPtrn = new RegExp(`\\{${k}\\}`, 'g');
         if (typeof v === 'string')
             retval = retval.replace(regPtrn, utility.String.escapeHTML(v));
         else if (typeof v === 'number')

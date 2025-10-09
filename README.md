@@ -18,7 +18,7 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v2.zip](https://excelkida.com/resource/tally-mcp-server-v2.zip)
+[https://excelkida.com/resource/tally-mcp-server-v3.zip](https://excelkida.com/resource/tally-mcp-server-v3.zip)
 
 ## Supported Platform
 Implementation was tested on below AI platform
@@ -105,6 +105,26 @@ Collections that can be queried:
 1. GSTIN
 1. GSTClassification
 
+### chart-of-accounts
+Extracts Chart of Accounts (or Group hierarchy) useful for preparing Balance Sheet, Profit and Loss, Trial Balance
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
+
+**Output**
+Tabular output with columns as below
+
+|Column|Description|
+|--|--|
+|group|Ledger name|
+|parent|Group under which ledger exists|
+|bs_pl|BS (Balance Sheet) / PL (Profit &amp; Loss)|
+|dr_cr|D (Debit) / C (Credit)|
+|affects_gross_profit|Y (Yes) / N (No)|
+
+
 ### trial-balance
 Extracts Trial Balance for the specified period
 
@@ -120,11 +140,8 @@ Tabular output with columns as below
 
 |Column|Description|
 |--|--|
-|name|Ledger name|
-|parent|Group under which ledger exists|
-|primary_group|Primary Group (in case of multi-level grouping) of the ledger|
-|bspl|BS (Balance Sheet) / PL (Profit &amp; Loss)|
-|drcr|Dr (Debit) / Cr (Credit)|
+|ledger|Ledger name|
+|group|Group under which ledger exists|
 |opening_balance|Opening Balance for the specified fromDate|
 |net_debit|Net Debit during the specified period|
 |net_credit|Net Credit during the specified period|

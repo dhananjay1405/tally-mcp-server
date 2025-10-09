@@ -23,6 +23,40 @@
             }
         },
         {
+            "name": "chart-of-accounts",
+            "input": [],
+            "output": {
+                "datatype": "array",
+                "fields": [
+                    {
+                        "name": "group",
+                        "datatype": "string",
+                        "identifier": "F01"
+                    },
+                    {
+                        "name": "parent",
+                        "datatype": "string",
+                        "identifier": "F02"
+                    },
+                    {
+                        "name": "bs_pl",
+                        "datatype": "string",
+                        "identifier": "F03"
+                    },
+                    {
+                        "name": "dr_cr",
+                        "datatype": "string",
+                        "identifier": "F04"
+                    },
+                    {
+                        "name": "affects_gross_profit",
+                        "datatype": "string",
+                        "identifier": "F05"
+                    }
+                ]
+            }
+        },
+        {
             "name": "trial-balance",
             "input": [
                 {
@@ -39,46 +73,31 @@
                 "fields": [
                     {
                         "identifier": "F01",
-                        "name": "name",
+                        "name": "ledger",
                         "datatype": "string"
                     },
                     {
                         "identifier": "F02",
-                        "name": "parent",
+                        "name": "group",
                         "datatype": "string"
                     },
                     {
                         "identifier": "F03",
-                        "name": "primary_group",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F04",
-                        "name": "bspl",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F05",
-                        "name": "drcr",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F06",
                         "name": "opening_balance",
                         "datatype": "number"
                     },
                     {
-                        "identifier": "F07",
+                        "identifier": "F04",
                         "name": "net_debit",
                         "datatype": "number"
                     },
                     {
-                        "identifier": "F08",
+                        "identifier": "F05",
                         "name": "net_credit",
                         "datatype": "number"
                     },
                     {
-                        "identifier": "F09",
+                        "identifier": "F06",
                         "name": "closing_balance",
                         "datatype": "number"
                     }

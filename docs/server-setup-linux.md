@@ -100,9 +100,9 @@ server {
 ```
 
 ### NodeJS Tally MCP Server
-Tally MCP server can be accessed by anyone publicly over the web, it is protected by OAuth 2.0 authentication as specified in MCP server development documentation. Kindly generate alpha-numeric secret code or **client_secret** of minimum 8 characters (use random string generator websites), which will act as password. Download &amp; extract zip archive from the download link (available on home page documentation).
+Tally MCP server can be accessed by anyone publicly over the web, it is protected by OAuth 2.0 authentication as specified in MCP server development documentation. Kindly generate alpha-numeric password of minimum 8 characters (use random string generator websites). Download &amp; extract zip archive from the download link (available on home page documentation).
 
-Assuming client_secret is **8LszTe5T** , domain is **example.com** and mcp server is extracted in location **/home/user/tally_mcp_server** , cd into the location and run it using below command.
+Assuming password is **8LszTe5T** , domain is **example.com** and mcp server is extracted in location **/home/user/tally_mcp_server** , cd into the location and run it using below command.
 
 ```bash
 PASSWORD=8LszTe5T MCP_DOMAIN=https://example.com node dist/server.mjs
@@ -126,15 +126,38 @@ Assuming your domain is **example.com** enter below values and then click Add bu
 If web-server is configured properly, it should display line item for the MCP server as below (icon will be different for everyone).
 ![Claude AI MCP Server listing](https://excelkida.com/image/github/claude-ai-custom-connector-listed.png)
 
-Click connect button, which will redirect to login screen. Enter **client_secret** in secret code and then click Submit.
+Click connect button, which will redirect to login screen. Enter password and then click Submit.
 ![Tally MCP Server Authorization](https://excelkida.com/image/github/tally-mcp-server-authorization.png)
 
-If correct secret code is entered, then it should redirect back with MCP server listed something like this.
+If correct password is entered, then it should redirect back with MCP server listed something like this.
 ![Claude AI Tally MCP Server connected status](https://excelkida.com/image/github/claude-ai-tally-mcp-server-connected-status.png)
 
 ### ChatGPT
-ChatGPT support for connecting to custom connectors (i.e. MCP Server) is available only for Plus, Pro, Business and Enterprise plans.
+ChatGPT support for connecting to custom connectors (i.e. MCP Server) is available only for Plus, Pro, Business and Enterprise plans (paid plan). The steps will keep on changing as ChatGPT is currently experimenting remote MCP server feature.
 
+Open ChatGPT website. Click on your profile and open Settings
+<p style="text-align:left">
+<image src="https://excelkida.com/image/github/chatgpt-settings-menu.png" height="690" width="536" />
+</p>
+
+
+Go to **Apps & Connectors**, scroll down and navigate to **Advanced settings**
+![ChatGPT Advanced settings](https://excelkida.com/image/github/chatgpt-settings-advanced-settings.png)
+
+Enable Developer mode switch
+![ChatGPT Advanced settings](https://excelkida.com/image/github/chatgpt-enable-developer-mode.png)
+
+Go back, scroll at the top and click *Create* button
+![ChatGPT Connector Create button](https://excelkida.com/image/github/chatgpt-connectors-create-button.png)
+
+Fill up the details (highlighted in yellow colour). Enter URL of your own MCP server domain
+![ChatGPT Connector Create button](https://excelkida.com/image/github/chatgpt-custom-connector-create.png)
+
+Click Create button, which will redirect to login screen. Enter Password and then click Submit.
+![Tally MCP Server Authorization](https://excelkida.com/image/github/tally-mcp-server-authorization.png)
+
+If correct password is entered, it should redirect back to ChatGPT with connecter added and available tools listed
+![ChatGPT Tally Prime MCP connector tools](https://excelkida.com/image/github/chatgpt-connector-tally-mcp-tools.png)
 
 ### Microsoft Copilot
 Exploration in progress !!!

@@ -43,32 +43,20 @@
                         <XMLTAG>F02</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld03">
-                        <SET>if $$IsEqual:$_PrimaryGroup:$$SysName:Primary then "$Primary" else $_PrimaryGroup</SET>
+                        <SET>if $$IsDebit:$OpeningBalance then -$OpeningBalance else $OpeningBalance</SET>
                         <XMLTAG>F03</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld04">
-                        <SET>if $IsRevenue then "PL" else "BS"</SET>
+                        <SET>$CreditTotals</SET>
                         <XMLTAG>F04</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld05">
-                        <SET>if $IsDeemedPositive then "Dr" else "Cr"</SET>
+                        <SET>$DebitTotals</SET>
                         <XMLTAG>F05</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld06">
-                        <SET>if $$IsDebit:$OpeningBalance then -$OpeningBalance else $OpeningBalance</SET>
-                        <XMLTAG>F06</XMLTAG>
-                    </FIELD>
-                    <FIELD NAME="Fld07">
-                        <SET>$CreditTotals</SET>
-                        <XMLTAG>F07</XMLTAG>
-                    </FIELD>
-                    <FIELD NAME="Fld08">
-                        <SET>$DebitTotals</SET>
-                        <XMLTAG>F08</XMLTAG>
-                    </FIELD>
-                    <FIELD NAME="Fld09">
                         <SET>if $$IsDebit:$ClosingBalance then -$ClosingBalance else $ClosingBalance</SET>
-                        <XMLTAG>F09</XMLTAG>
+                        <XMLTAG>F06</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
                         <TYPE>Ledger</TYPE>
