@@ -102,10 +102,18 @@ server {
 ### NodeJS Tally MCP Server
 Tally MCP server can be accessed by anyone publicly over the web, it is protected by OAuth 2.0 authentication as specified in MCP server development documentation. Kindly generate alpha-numeric password of minimum 8 characters (use random string generator websites). Download &amp; extract zip archive from the download link (available on home page documentation).
 
-Assuming password is **8LszTe5T** , domain is **example.com** and mcp server is extracted in location **/home/user/tally_mcp_server** , cd into the location and run it using below command.
+Assuming password is **8LszTe5T** , domain is **example.com** and mcp server is extracted in location **/home/user/tally_mcp_server** , cd into the location, and edit file .env with below config
+
+```
+PASSWORD=8LszTe5T
+MCP_DOMAIN=https://example.com
+CONNECTION_STRING=
+```
+
+run mcp server with below command from bash terminal
 
 ```bash
-PASSWORD=8LszTe5T MCP_DOMAIN=https://example.com node dist/server.mjs
+node dist/server.mjs
 ```
 
 This will start back facing Tally MCP Server, which receives request from front facing Nginx and communicate to Tally Prime via SSH tunnel. Manually running above command from linux terminal should be used only for testing purpose. On closing of linux terminal, MCP server launched by above command will be stopped. Kindly use process manager like [PM2 for Node JS](https://pm2.keymetrics.io/) to keep MCP server running.

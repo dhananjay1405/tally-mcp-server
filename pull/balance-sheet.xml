@@ -10,7 +10,6 @@
         <DESC>
             <STATICVARIABLES>
                 <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                <SVFROMDATE>{fromDate}</SVFROMDATE>
                 <SVTODATE>{toDate}</SVTODATE>
                 <nunjuck>if targetCompany</nunjuck>
                 <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
@@ -26,12 +25,16 @@
                         <XMLTAG>DATA</XMLTAG>
                     </FORM>
                     <PART NAME="MyPart01">
-                        <LINES>MyLine01</LINES>
+                        <LINES>MyLine01,MyLineCloStk</LINES>
                         <REPEAT>MyLine01 : MyCollection</REPEAT>
                         <SCROLLED>Vertical</SCROLLED>
                     </PART>
                     <LINE NAME="MyLine01">
-                        <FIELDS>Fld01,Fld02,Fld03,Fld04,Fld05,Fld06</FIELDS>
+                        <FIELDS>Fld01,Fld02,Fld03</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <LINE NAME="MyLineCloStk">
+                        <FIELDS>Fld01_CloStk,Fld02_CloStk,Fld03_CloStk</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <FIELD NAME="Fld01">
@@ -43,24 +46,27 @@
                         <XMLTAG>F02</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld03">
-                        <SET>if $$IsEmpty:$OpeningBalance then 0 else $$StringFindAndReplace:(if $$IsDebit:$OpeningBalance then -$$Number:$OpeningBalance else $$Number:$OpeningBalance):"(-)":"-"</SET>
+                        <SET>if $$IsEmpty:$ClosingBalance then 0 else $$StringFindAndReplace:(if $$IsDebit:$ClosingBalance then -$$Number:$ClosingBalance else $$Number:$ClosingBalance):"(-)":"-"</SET>
                         <XMLTAG>F03</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="Fld04">
-                        <SET>if $$IsEmpty:$DebitTotals then 0 else $$StringFindAndReplace:(-$$Number:$DebitTotals):"(-)":"-"</SET>
-                        <XMLTAG>F04</XMLTAG>
+                    <FIELD NAME="Fld01_CloStk">
+                        <SET>"Closing Stock"</SET>
+                        <XMLTAG>F01</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="Fld05">
-                        <SET>if $$IsEmpty:$DebitTotals then 0 else $$StringFindAndReplace:(-$$Number:$CreditTotals):"(-)":"-"</SET>
-                        <XMLTAG>F05</XMLTAG>
+                    <FIELD NAME="Fld02_CloStk">
+                        <SET>$$Groupstock</SET>
+                        <XMLTAG>F02</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="Fld06">
-                        <SET>if $$IsEmpty:$ClosingBalance then 0 else $$StringFindAndReplace:(if $$IsDebit:$ClosingBalance then -$$Number:$ClosingBalance else $$Number:$ClosingBalance):"(-)":"-"</SET>
-                        <XMLTAG>F06</XMLTAG>
+                    <FIELD NAME="Fld03_CloStk">
+                        <SET>if $$IsEmpty:($ClosingBalance:Group:$$GroupStock) then 0 else $$StringFindAndReplace:(if $$IsDebit:($ClosingBalance:Group:$$GroupStock) then -$$Number:($ClosingBalance:Group:$$GroupStock) else $$Number:($ClosingBalance:Group:$$GroupStock)):"(-)":"-"</SET>
+                        <XMLTAG>F03</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
                         <TYPE>Ledger</TYPE>
+                        <FILTER>FltrBS,FltrStock</FILTER>
                     </COLLECTION>
+                    <SYSTEM TYPE="Formulae" NAME="FltrBS">NOT $IsRevenue</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FltrStock">NOT $$IsEqual:$_PrimaryGroup:$$GroupStock</SYSTEM>
                 </TDLMESSAGE>
             </TDL>
         </DESC>

@@ -29,7 +29,7 @@
 						<SCROLLED>Vertical</SCROLLED>
 					</PART>
 					<LINE NAME="MyLine01">
-						<FIELDS>Fld01,Fld02,Fld03,Fld04,Fld05,Fld06,Fld07,Fld08</FIELDS>
+						<FIELDS>Fld01,Fld02,Fld03,Fld04,Fld05</FIELDS>
 						<XMLTAG>ROW</XMLTAG>
 					</LINE>
 					<FIELD NAME="Fld01">

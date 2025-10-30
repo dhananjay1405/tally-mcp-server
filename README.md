@@ -18,7 +18,7 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v3.zip](https://excelkida.com/resource/tally-mcp-server-v3.zip)
+[https://excelkida.com/resource/tally-mcp-server-v4.zip](https://excelkida.com/resource/tally-mcp-server-v4.zip)
 
 ## Supported Platform
 Implementation was tested on below AI platform
@@ -147,6 +147,45 @@ Tabular output with columns as below
 |net_credit|Net Credit during the specified period|
 |closing_balance|Closing Balance for the specified fromDate|
 
+
+### balance-sheet
+Extracts Balance Sheet as on date
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
+|toDate|as on date of Balance Sheet|
+
+**Output**
+Tabular output with columns as below
+
+|Column|Description|
+|--|--|
+|ledger|Ledger name|
+|group|Group under which ledger exists|
+|closing_balance|Closing Balance as on date|
+
+### profit-loss
+Extracts Profit &amp; Loss for the period
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
+|fromDate|Period start date|
+|toDate|Period end date|
+
+**Output**
+Tabular output with columns as below
+
+|Column|Description|
+|--|--|
+|ledger|Ledger name|
+|group|Group under which ledger exists|
+|amount|Amount of net activity (-ve = Expense / +ve = Income)|
+
+
 ### ledger-balance
 Returns closing balance of ledger as on specified date
 
@@ -186,6 +225,7 @@ Tabular output with columns as below
 |date|Date of voucher|
 |voucher_type|Voucher Type|
 |voucher_number|Voucher Number|
+|party_ledger|Party ledger or opposite side ledger|
 |amount|Amount (negative = Debit / positive = Credit)|
 |narration|Narration or Remarks of voucher|
 

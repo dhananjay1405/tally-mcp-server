@@ -105,154 +105,62 @@
             }
         },
         {
-            "name": "ledger-master",
-            "input": [],
+            "name": "profit-loss",
+            "input": [
+                {
+                    "name": "fromDate",
+                    "datatype": "date"
+                },
+                {
+                    "name": "toDate",
+                    "datatype": "date"
+                }
+            ],
             "output": {
                 "datatype": "array",
                 "fields": [
                     {
                         "identifier": "F01",
-                        "name": "guid",
+                        "name": "ledger",
                         "datatype": "string"
                     },
                     {
                         "identifier": "F02",
-                        "name": "name",
+                        "name": "group",
                         "datatype": "string"
                     },
                     {
                         "identifier": "F03",
-                        "name": "parent",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F04",
-                        "name": "alias",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F05",
-                        "name": "description",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F06",
-                        "name": "notes",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F07",
-                        "name": "is_revenue",
-                        "datatype": "boolean"
-                    },
-                    {
-                        "identifier": "F08",
-                        "name": "is_deemedpositive",
-                        "datatype": "boolean"
-                    },
-                    {
-                        "identifier": "F09",
-                        "name": "opening_balance",
+                        "name": "amount",
                         "datatype": "number"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "balance-sheet",
+            "input": [
+                {
+                    "name": "toDate",
+                    "datatype": "date"
+                }
+            ],
+            "output": {
+                "datatype": "array",
+                "fields": [
+                    {
+                        "identifier": "F01",
+                        "name": "ledger",
+                        "datatype": "string"
                     },
                     {
-                        "identifier": "F10",
+                        "identifier": "F02",
+                        "name": "group",
+                        "datatype": "string"
+                    },
+                    {
+                        "identifier": "F03",
                         "name": "closing_balance",
-                        "datatype": "number"
-                    },
-                    {
-                        "identifier": "F11",
-                        "name": "mailing_name",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F12",
-                        "name": "mailing_address",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F13",
-                        "name": "mailing_state",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F14",
-                        "name": "mailing_country",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F15",
-                        "name": "mailing_pincode",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F16",
-                        "name": "email",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F17",
-                        "name": "it_pan",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F18",
-                        "name": "gstn",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F19",
-                        "name": "gst_registration_type",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F20",
-                        "name": "gst_supply_type",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F21",
-                        "name": "gst_duty_head",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F22",
-                        "name": "tax_rate",
-                        "datatype": "number"
-                    },
-                    {
-                        "identifier": "F23",
-                        "name": "bank_account_holder",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F24",
-                        "name": "bank_account_number",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F25",
-                        "name": "bank_ifsc",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F26",
-                        "name": "bank_swift",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F27",
-                        "name": "bank_name",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F28",
-                        "name": "bank_branch",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F29",
-                        "name": "bill_credit_period",
                         "datatype": "number"
                     }
                 ]
@@ -338,16 +246,6 @@
                         "identifier": "F06",
                         "name": "narration",
                         "datatype": "string"
-                    },
-                    {
-                        "identifier": "F07",
-                        "name": "reference_number",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F08",
-                        "name": "reference_date",
-                        "datatype": "date"
                     }
                 ]
             }
@@ -518,225 +416,6 @@
                         "name": "overdue_days",
                         "datatype": "number",
                         "identifier": "F05"
-                    }
-                ]
-            }
-        },
-        {
-            "name": "voucher-list",
-            "input": [
-                {
-                    "name": "fromDate",
-                    "datatype": "date"
-                },
-                {
-                    "name": "toDate",
-                    "datatype": "date"
-                }
-            ],
-            "output": {
-                "datatype": "array",
-                "fields": [
-                    {
-                        "identifier": "F01",
-                        "name": "guid",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F02",
-                        "name": "date",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F03",
-                        "name": "voucher_type",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F04",
-                        "name": "voucher_number",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F05",
-                        "name": "reference_number",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F06",
-                        "name": "reference_date",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F07",
-                        "name": "narration",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F08",
-                        "name": "party_name",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F09",
-                        "name": "is_inventory_voucher",
-                        "datatype": "boolean"
-                    },
-                    {
-                        "identifier": "F10",
-                        "name": "is_order_voucher",
-                        "datatype": "boolean"
-                    }
-                ]
-            }
-        },
-        {
-            "name": "purchase-sales-voucher",
-            "input": [
-                {
-                    "name": "nature",
-                    "datatype": "string"
-                },
-                {
-                    "name": "fromDate",
-                    "datatype": "date"
-                },
-                {
-                    "name": "toDate",
-                    "datatype": "date"
-                }
-            ],
-            "output": {
-                "datatype": "array",
-                "fields": [
-                    {
-                        "identifier": "F01",
-                        "name": "date",
-                        "datatype": "date"
-                    },
-                    {
-                        "identifier": "F02",
-                        "name": "voucher_type",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F03",
-                        "name": "voucher_number",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F04",
-                        "name": "narration",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F05.LIST",
-                        "datatype": "array",
-                        "name": "ledgerentries",
-                        "fields": [
-                            {
-                                "identifier": "F01",
-                                "name": "ledger",
-                                "datatype": "string"
-                            },
-                            {
-                                "identifier": "F02",
-                                "name": "amount",
-                                "datatype": "number"
-                            }
-                        ]
-                    },
-                    {
-                        "identifier": "F06.LIST",
-                        "datatype": "array",
-                        "name": "inventoryentries",
-                        "fields": [
-                            {
-                                "identifier": "F01",
-                                "name": "item",
-                                "datatype": "string"
-                            },
-                            {
-                                "identifier": "F02",
-                                "name": "quantity",
-                                "datatype": "number"
-                            },
-                            {
-                                "identifier": "F03",
-                                "name": "rate",
-                                "datatype": "number"
-                            },
-                            {
-                                "identifier": "F04",
-                                "name": "amount",
-                                "datatype": "number"
-                            },
-                            {
-                                "identifier": "F05",
-                                "name": "godown",
-                                "datatype": "string"
-                            }
-
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "name": "group-voucher",
-            "input": [
-                {
-                    "name": "fromDate",
-                    "datatype": "date"
-                },
-                {
-                    "name": "toDate",
-                    "datatype": "date"
-                },
-                {
-                    "name": "groupName",
-                    "datatype": "string"
-                }
-            ],
-            "output": {
-                "datatype": "array",
-                "fields": [
-                    {
-                        "identifier": "F01",
-                        "name": "date",
-                        "datatype": "date"
-                    },
-                    {
-                        "identifier": "F02",
-                        "name": "voucher_type",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F03",
-                        "name": "voucher_number",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F04",
-                        "name": "narration",
-                        "datatype": "string"
-                    },
-                    {
-                        "identifier": "F05.LIST",
-                        "datatype": "array",
-                        "name": "ledgerentries",
-                        "fields": [
-                            {
-                                "identifier": "F01",
-                                "name": "ledger",
-                                "datatype": "string"
-                            },
-                            {
-                                "identifier": "F02",
-                                "name": "amount",
-                                "datatype": "number"
-                            }
-                        ]
                     }
                 ]
             }

@@ -94,10 +94,19 @@ export function handlePull(targetReport, inputParams) {
         }
     });
 }
-function sendTally(xml, data) {
+function sendTally(xml, lstVariables) {
     return new Promise(async (resolve, reject) => {
         try {
-            let xmlRequest = nunjucks.renderString(xml, data);
+            // remove targetCompany from lstVariables if found with default value
+            if (lstVariables.has('targetCompany') && lstVariables.get('targetCompany') == '##SVCurrentCompany') {
+                lstVariables.delete('targetCompany');
+            }
+            let o = new Object();
+            // define properties for every keys in Map in object
+            lstVariables.forEach((v, k) => {
+                Object.defineProperty(o, k, { enumerable: true, value: v });
+            });
+            let xmlRequest = nunjucks.renderString(xml, o);
             let xmlResponse = await postTallyXML(xmlRequest);
             resolve(xmlResponse);
         }
@@ -237,7 +246,7 @@ function extractReport(reportConfig, reportInputParams) {
             };
             let tmplXML = fs.readFileSync(path.join(__dirname, `../pull/${reportConfig.name}.xml`), 'utf-8'); //load XML template
             tmplXML = substituteTDLParameters(tmplXML, reportInputParams); //substitute angular bracket params with values
-            let respContent = await sendTally(tmplXML);
+            let respContent = await sendTally(tmplXML, reportInputParams);
             if (!respContent) {
                 retval.error = 'Empty data received from Tally';
                 return;

@@ -17,11 +17,7 @@
             "program": "dist/server.mjs",
             "outFiles": [
                 "${workspaceFolder}/**/*.mjs"
-            ],
-            "env": {
-                "PASSWORD": "password",
-                "MCP_DOMAIN": "https://example.com"
-            }
+            ]
         }
     ]
 }

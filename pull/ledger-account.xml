@@ -26,12 +26,16 @@
                         <XMLTAG>DATA</XMLTAG>
                     </FORM>
                     <PART NAME="MyPart01">
-                        <LINES>MyLine01</LINES>
+                        <LINES>MyLine01,MyLineOp</LINES>
                         <REPEAT>MyLine01 : MyCollection</REPEAT>
                         <SCROLLED>Vertical</SCROLLED>
                     </PART>
                     <LINE NAME="MyLine01">
                         <FIELDS>FldDate,FldVoucherType,FldVoucherNumber,FldPartyLedger,FldAmount,FldNarration</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <LINE NAME="MyLineOp">
+                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldVoucherNumberOp,FldPartyLedgerOp,FldAmountOp,FldNarrationOp</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <FIELD NAME="FldDate">
@@ -51,27 +55,43 @@
                         <XMLTAG>F04</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldAmount">
-                        <SET>$$StringFindAndReplace:(if $$IsDebit:$Amount then -$$NumValue:$Amount else $$NumValue:$Amount}):"(-)":"-"</SET>
+                        <SET>$$StringFindAndReplace:(if $$IsDebit:$Amount then -$$NumValue:$Amount else $$NumValue:$Amount):"(-)":"-"</SET>
                         <XMLTAG>F05</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarration">
                         <SET>$Narration</SET>
                         <XMLTAG>F06</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="FldReferenceNumber">
-                        <SET>$Reference</SET>
-                        <XMLTAG>F07</XMLTAG>
+                    <FIELD NAME="FldDateOp">
+                        <SET>##SVFromDate</SET>
+                        <XMLTAG>F01</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="FldReferenceDate">
-                        <SET>$ReferenceDate</SET>
-                        <XMLTAG>F08</XMLTAG>
+                    <FIELD NAME="FldVoucherTypeOp">
+                        <SET>"Opening"</SET>
+                        <XMLTAG>F02</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldVoucherNumberOp">
+                        <SET>""</SET>
+                        <XMLTAG>F03</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldPartyLedgerOp">
+                        <SET>""</SET>
+                        <XMLTAG>F04</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldAmountOp">
+                        <SET>$OpeningBalance:Ledger:"{ledgerName}"</SET>
+                        <XMLTAG>F05</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldNarrationOp">
+                        <SET>""</SET>
+                        <XMLTAG>F06</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
-                        <TYPE>Voucher</TYPE>
-                        <FETCH>Narration,AllLedgerEntries</FETCH>
-                        <FILTER>FilterVchLedger,FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
+                        <TYPE>Vouchers:Ledger</TYPE>
+                        <CHILDOF>{{ledgerName | escape}}</CHILDOF>
+                        <FETCH>AllLedgerEntries,Narration,PartyLedgerName</FETCH>
+                        <FILTER>FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
-                    <SYSTEM TYPE="Formulae" NAME="FilterVchLedger">$$IsEqual:$LedgerName:"{ledgerName}"</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeInventoryVch">NOT $$IsInventoryVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>

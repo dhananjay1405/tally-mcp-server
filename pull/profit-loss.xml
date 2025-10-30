@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ENVELOPE>
+    <HEADER>
+        <VERSION>1</VERSION>
+        <TALLYREQUEST>Export</TALLYREQUEST>
+        <TYPE>Data</TYPE>
+        <ID>MyTallyLiveReport</ID>
+    </HEADER>
+    <BODY>
+        <DESC>
+            <STATICVARIABLES>
+                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                <SVFROMDATE>{fromDate}</SVFROMDATE>
+                <SVTODATE>{toDate}</SVTODATE>
+                <nunjuck>if targetCompany</nunjuck>
+                <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
+                <nunjuck>endif</nunjuck>
+            </STATICVARIABLES>
+            <TDL>
+                <TDLMESSAGE>
+                    <REPORT NAME="MyTallyLiveReport">
+                        <FORMS>MyForm</FORMS>
+                    </REPORT>
+                    <FORM NAME="MyForm">
+                        <PARTS>MyPart01</PARTS>
+                        <XMLTAG>DATA</XMLTAG>
+                    </FORM>
+                    <PART NAME="MyPart01">
+                        <LINES>MyLine01,MyLineOpStk,MyLineCloStk</LINES>
+                        <REPEAT>MyLine01 : MyCollection</REPEAT>
+                        <SCROLLED>Vertical</SCROLLED>
+                    </PART>
+                    <LINE NAME="MyLine01">
+                        <FIELDS>Fld01,Fld02,Fld03</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <LINE NAME="MyLineOpStk">
+                        <FIELDS>Fld01_OpStk,Fld02_OpStk,Fld03_OpStk</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <LINE NAME="MyLineCloStk">
+                        <FIELDS>Fld01_CloStk,Fld02_CloStk,Fld03_CloStk</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    <FIELD NAME="Fld01">
+                        <SET>$Name</SET>
+                        <XMLTAG>F01</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld02">
+                        <SET>if $$IsEqual:$Parent:$$SysName:Primary then "" else $Parent</SET>
+                        <XMLTAG>F02</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld03">
+                        <SET>if $$IsEmpty:$ClosingBalance then 0 else $$StringFindAndReplace:(if $$IsDebit:$ClosingBalance then -$$Number:$ClosingBalance else $$Number:$ClosingBalance):"(-)":"-"</SET>
+                        <XMLTAG>F03</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld01_OpStk">
+                        <SET>"Opening Stock"</SET>
+                        <XMLTAG>F01</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld02_OpStk">
+                        <SET>$$Groupstock</SET>
+                        <XMLTAG>F02</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld03_OpStk">
+                        <SET>if $$IsEmpty:($OpeningBalance:Group:$$GroupStock) then 0 else $$StringFindAndReplace:(if $$IsDebit:($OpeningBalance:Group:$$GroupStock) then -$$Number:($OpeningBalance:Group:$$GroupStock) else $$Number:($OpeningBalance:Group:$$GroupStock)):"(-)":"-"</SET>
+                        <XMLTAG>F03</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld01_CloStk">
+                        <SET>"Closing Stock"</SET>
+                        <XMLTAG>F01</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld02_CloStk">
+                        <SET>$$Groupstock</SET>
+                        <XMLTAG>F02</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="Fld03_CloStk">
+                        <SET>if $$IsEmpty:($ClosingBalance:Group:$$GroupStock) then 0 else $$StringFindAndReplace:(if $$IsDebit:($ClosingBalance:Group:$$GroupStock) then $$Number:($ClosingBalance:Group:$$GroupStock) else -$$Number:($ClosingBalance:Group:$$GroupStock)):"(-)":"-"</SET>
+                        <XMLTAG>F03</XMLTAG>
+                    </FIELD>
+                    <COLLECTION NAME="MyCollection">
+                        <TYPE>Ledger</TYPE>
+                        <FILTER>FltrPL</FILTER>
+                    </COLLECTION>
+                    <SYSTEM TYPE="Formulae" NAME="FltrPL">$IsRevenue</SYSTEM>
+                </TDLMESSAGE>
+            </TDL>
+        </DESC>
+    </BODY>
+</ENVELOPE>
