@@ -251,6 +251,68 @@
             }
         },
         {
+            "name": "stock-item-account",
+            "input": [
+                {
+                    "name": "fromDate",
+                    "datatype": "date"
+                },
+                {
+                    "name": "toDate",
+                    "datatype": "date"
+                },
+                {
+                    "name": "itemName",
+                    "datatype": "string"
+                }
+            ],
+            "output": {
+                "datatype": "array",
+                "fields": [
+                    {
+                        "identifier": "F01",
+                        "name": "date",
+                        "datatype": "date"
+                    },
+                    {
+                        "identifier": "F02",
+                        "name": "voucher_type",
+                        "datatype": "string"
+                    },
+                    {
+                        "identifier": "F03",
+                        "name": "voucher_number",
+                        "datatype": "string"
+                    },
+                    {
+                        "identifier": "F04",
+                        "name": "party_ledger",
+                        "datatype": "string"
+                    },
+                    {
+                        "identifier": "F05",
+                        "name": "quantity",
+                        "datatype": "number"
+                    },
+                    {
+                        "identifier": "F06",
+                        "name": "amount",
+                        "datatype": "number"
+                    },
+                    {
+                        "identifier": "F07",
+                        "name": "narration",
+                        "datatype": "string"
+                    },
+                    {
+                        "identifier": "F08",
+                        "name": "tracking_number",
+                        "datatype": "string"
+                    }
+                ]
+            }
+        },
+        {
             "name": "item-ledger",
             "input": [
                 {

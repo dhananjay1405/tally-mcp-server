@@ -18,7 +18,7 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v4.zip](https://excelkida.com/resource/tally-mcp-server-v4.zip)
+[https://excelkida.com/resource/tally-mcp-server-v5.zip](https://excelkida.com/resource/tally-mcp-server-v5.zip)
 
 ## Supported Platform
 Implementation was tested on below AI platform
@@ -244,6 +244,32 @@ Available Quantity of stock item (if exists)
 
 
 Note: If specified stock item does not exists, LLM might invoke list-master tool to fetch list of stock items. It will attempt to find closest possible stock item name for this list and re-run this action. This might produce un-predictable response.
+
+
+### stock-item-account
+Extracts account statement for stock item vouchers for the specified item for the given period
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
+|itemName|Ledger of which to query balance|
+|fromDate|period start date|
+|toDate|period end date|
+
+**Output**
+Tabular output with columns as below
+
+|Column|Description|
+|--|--|
+|date|Date of voucher|
+|voucher_type|Voucher Type|
+|voucher_number|Voucher Number|
+|party_ledger|Party ledger or opposite side ledger|
+|quantity|Quantity (negative = Outward / positive = Inward)|
+|amount|Amount (negative = Debit / positive = Credit)|
+|narration|Narration or Remarks of voucher|
+|tracking_number|Tracking number to reconcile pending quantity received by ignoring excess / missing quantity in actual purchase (against receipt note) and sales (against delivery note)|
 
 ### bills-outstanding
 Extracts bill-wise outstanding Receivables / Payables report

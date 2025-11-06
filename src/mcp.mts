@@ -365,28 +365,49 @@ export async function registerMcpServer(): Promise<McpServer> {
         };
       }
 
-      /* //code for Database Mode (for future use)
-      //check if database connection string is available
-      if(!process.env.CONNECTION_STRING || process.env.CONNECTION_STRING.trim() === '') {
-        return {
-          isError: true,
-          content: [{ type: 'text', text: 'Database connection string is not configured in environment variables.' }]
-        }
+    }
+  );
+
+  mcpServer.registerTool(
+    'stock-item-account',
+    {
+      title: 'Stock Item Account',
+      description: `fetches read-only GL stock item account statement with voucher level details containing date, voucher type, voucher number, party name, quantity (inward as positive and outward as negative), amount (debit is negative and credit is positive), narration (or notes / remarks), tracking number (when tracking_number is blank ignore the field, but when found with some value it is used to track pending quantity based on voucher type, receipt note for purchase and delivery note for sales). returns output in tab separated format`,
+      inputSchema: {
+        targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
+        itemName: z.string().describe('exact stock item name, validate it using list-master tool with collection as stockitem'),
+        fromDate: z.string().describe('date in YYYY-MM-DD format'),
+        toDate: z.string().describe('date in YYYY-MM-DD format')
+      },
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false
+      }
+    },
+    async (args) => {
+      let inputParams = new Map([['fromDate', args.fromDate], ['toDate', args.toDate], ['itemName', args.itemName]]);
+      if (args.targetCompany) {
+        inputParams.set('targetCompany', args.targetCompany);
       }
 
-      const dbResult = await getQueryResult(`SELECT v.date, v.voucher_type as "voucher type", v.voucher_number as "voucher number", v.party_name as "party ledger", a.amount, v.narration FROM trn_voucher as v JOIN trn_accounting as a on v.guid = a.guid WHERE v.is_order_voucher = 0 AND v.is_inventory_voucher = 0 AND a.ledger = $1 AND v.date BETWEEN $2 AND $3 ORDER BY date ASC, voucher_number ASC`, [inputParams.get('ledgerName'), inputParams.get('fromDate'), inputParams.get('toDate')]);
-      if (dbResult.error) {
+      const resp = await handlePull('stock-item-account', inputParams);
+      if (resp.error) {
         return {
           isError: true,
-          content: [{ type: 'text', text: 'Error' }]
-        }
+          content: [{ type: 'text', text: resp.error }]
+        };
       }
       else {
-        return {
-          content: [{ type: 'text', text: jsonToTSV(dbResult.data) }]
+
+        //swap opening balance row to the top since it came at the end from Tally XML response
+        if (Array.isArray(resp.data) && resp.data.length > 0) {
+          const lastItem = resp.data.pop();
+          resp.data.unshift(lastItem);
         }
+        return {
+          content: [{ type: 'text', text: jsonToTSV(resp.data) }]
+        };
       }
-      */
 
     }
   );

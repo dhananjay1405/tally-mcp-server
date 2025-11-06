@@ -31,11 +31,11 @@
                         <SCROLLED>Vertical</SCROLLED>
                     </PART>
                     <LINE NAME="MyLine01">
-                        <FIELDS>FldDate,FldVoucherType,FldVoucherNumber,FldPartyLedger,FldAmount,FldNarration</FIELDS>
+                        <FIELDS>FldDate,FldVoucherType,FldVoucherNumber,FldPartyLedger,FldQuantity,FldAmount,FldNarration,FldTrackingNumber</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <LINE NAME="MyLineOp">
-                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldVoucherNumberOp,FldPartyLedgerOp,FldAmountOp,FldNarrationOp</FIELDS>
+                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldVoucherNumberOp,FldPartyLedgerOp,FldQuantityOp,FldAmountOp,FldNarrationOp,FldTrackingNumberOp</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <FIELD NAME="FldDate">
@@ -54,13 +54,21 @@
                         <SET>$PartyLedgerName</SET>
                         <XMLTAG>F04</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="FldAmount">
-                        <SET>$$StringFindAndReplace:(if $$IsDebit:$Amount then -$$NumValue:$Amount else $$NumValue:$Amount):"(-)":"-"</SET>
+                    <FIELD NAME="FldQuantity">
+                        <SET>if $$IsInwards:$AllInventoryEntries[1,@@FilterItemEqual].BilledQty then $$Number:$AllInventoryEntries[1,@@FilterItemEqual].BilledQty else -$$Number:$AllInventoryEntries[1,@@FilterItemEqual].BilledQty</SET>
                         <XMLTAG>F05</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldAmount">
+                        <SET>if $$IsDebit:($AllInventoryEntries[1,@@FilterItemEqual].Amount) then -$$NumValue:$AllInventoryEntries[1,@@FilterItemEqual].Amount else $$NumValue:$AllInventoryEntries[1,@@FilterItemEqual].Amount</SET>
+                        <XMLTAG>F06</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarration">
                         <SET>$Narration</SET>
-                        <XMLTAG>F06</XMLTAG>
+                        <XMLTAG>F07</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldTrackingNumber">
+                        <SET>if ($$IsEmpty:$AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber or $$IsNotApplicable:$AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber) then "" else $AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber</SET>
+                        <XMLTAG>F08</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldDateOp">
                         <SET>##SVFromDate</SET>
@@ -78,21 +86,30 @@
                         <SET>""</SET>
                         <XMLTAG>F04</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="FldAmountOp">
-                        <SET>if $$IsDebit:$OpeningBalance:Ledger:"{ledgerName}" then -$$NumValue:$OpeningBalance:Ledger:"{ledgerName}" else $$NumValue:$OpeningBalance:Ledger:"{ledgerName}"</SET>
+                    <FIELD NAME="FldQuantityOp">
+                        <SET>if $$IsInwards:$OpeningBalance:StockItem:"{itemName}" then $$NumValue:$OpeningBalance:StockItem:"{itemName}" else -$$NumValue:$OpeningBalance:StockItem:"{itemName}"</SET>
                         <XMLTAG>F05</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldAmountOp">
+                        <SET>if $$IsDebit:$OpeningValue:StockItem:"{itemName}" then -$$NumValue:$OpeningValue:StockItem:"{itemName}" else $$NumValue:$OpeningValue:StockItem:"{itemName}"</SET>
+                        <XMLTAG>F06</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarrationOp">
                         <SET>""</SET>
-                        <XMLTAG>F06</XMLTAG>
+                        <XMLTAG>F07</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldTrackingNumberOp">
+                        <SET>""</SET>
+                        <XMLTAG>F08</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
-                        <TYPE>Vouchers:Ledger</TYPE>
-                        <CHILDOF>{{ledgerName | escape}}</CHILDOF>
-                        <FETCH>AllLedgerEntries,Narration,PartyLedgerName</FETCH>
-                        <FILTER>FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
+                        <TYPE>Voucher</TYPE>
+                        <FETCH>AllInventoryEntries,Narration,PartyLedgerName</FETCH>
+                        <FILTER>FilterStockItem,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
-                    <SYSTEM TYPE="Formulae" NAME="FilterExcludeInventoryVch">NOT $$IsInventoryVch:$VoucherTypeName</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterStockItem">NOT $$IsEmpty:$AllInventoryEntries[1,@@FilterItemEqual].StockItemName</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterItemEqual">$StockItemName = "{itemName}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterInventoryVch">$$IsInventoryVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterOptionalVouchers">NOT $IsOptional</SYSTEM>

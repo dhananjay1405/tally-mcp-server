@@ -1,4 +1,14 @@
-Version: **v4**
+Version: **v5**<br>
+Release Date: **06-Nov-2025**
+
+Added:
+* Stock Item Account tool
+
+Fixed:
+* ledger-account tool was ignoring Debit / Credit sign for opening balance. XML was fixed to prefix Dr / Cr sign
+
+
+Version: **v4**<br>
 Release Date: **30-Oct-2025**
 
 Added:
@@ -11,7 +21,7 @@ Fixed:
 * Unnecessary XML files used during initial development phase were removed
 
 
-Version: **v3**
+Version: **v3**<br>
 Release Date: **09-Oct-2025**
 
 Added:
@@ -25,7 +35,7 @@ Fixed:
 * Converted output of all the possible tools to tab separated format for optimization and light-weight response
 
 
-Version: **v2**
+Version: **v2**<br>
 Release Date: **04-Oct-2025**
 
 Added:
@@ -38,7 +48,7 @@ Fixed:
 * CLIENT_SECRET term was mistakenly used in entire code base, which was renamed as PASSWORD which is precise description of it.
 
 
-Version: **v1**
+Version: **v1**<br>
 Release Date: **02-Sep-2025**
 
 Added:
