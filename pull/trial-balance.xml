@@ -43,19 +43,19 @@
                         <XMLTAG>F02</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld03">
-                        <SET>if $$IsEmpty:$OpeningBalance then 0 else $$StringFindAndReplace:(if $$IsDebit:$OpeningBalance then -$$Number:$OpeningBalance else $$Number:$OpeningBalance):"(-)":"-"</SET>
+                        <SET>if $$IsEmpty:$OpeningBalance then 0 else (if $$IsDebit:$OpeningBalance then -$$Number:$OpeningBalance else $$Number:$OpeningBalance)</SET>
                         <XMLTAG>F03</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld04">
-                        <SET>if $$IsEmpty:$DebitTotals then 0 else $$StringFindAndReplace:(-$$Number:$DebitTotals):"(-)":"-"</SET>
+                        <SET>if $$IsEmpty:$DebitTotals then 0 else -$$Number:$DebitTotals</SET>
                         <XMLTAG>F04</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld05">
-                        <SET>if $$IsEmpty:$DebitTotals then 0 else $$StringFindAndReplace:(-$$Number:$CreditTotals):"(-)":"-"</SET>
+                        <SET>if $$IsEmpty:$CreditTotals then 0 else -$$Number:$CreditTotals</SET>
                         <XMLTAG>F05</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld06">
-                        <SET>if $$IsEmpty:$ClosingBalance then 0 else $$StringFindAndReplace:(if $$IsDebit:$ClosingBalance then -$$Number:$ClosingBalance else $$Number:$ClosingBalance):"(-)":"-"</SET>
+                        <SET>if $$IsEmpty:$ClosingValue then 0 else (if $$IsDebit:$ClosingBalance then $$Number:$ClosingValue else -$$Number:$ClosingValue)</SET>
                         <XMLTAG>F06</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">

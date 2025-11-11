@@ -29,12 +29,12 @@
                 "datatype": "array",
                 "fields": [
                     {
-                        "name": "group",
+                        "name": "group_name",
                         "datatype": "string",
                         "identifier": "F01"
                     },
                     {
-                        "name": "parent",
+                        "name": "group_parent",
                         "datatype": "string",
                         "identifier": "F02"
                     },
@@ -73,12 +73,12 @@
                 "fields": [
                     {
                         "identifier": "F01",
-                        "name": "ledger",
+                        "name": "ledger_name",
                         "datatype": "string"
                     },
                     {
                         "identifier": "F02",
-                        "name": "group",
+                        "name": "group_name",
                         "datatype": "string"
                     },
                     {
@@ -121,12 +121,12 @@
                 "fields": [
                     {
                         "identifier": "F01",
-                        "name": "ledger",
+                        "name": "ledger_name",
                         "datatype": "string"
                     },
                     {
                         "identifier": "F02",
-                        "name": "group",
+                        "name": "group_name",
                         "datatype": "string"
                     },
                     {
@@ -150,12 +150,12 @@
                 "fields": [
                     {
                         "identifier": "F01",
-                        "name": "ledger",
+                        "name": "ledger_name",
                         "datatype": "string"
                     },
                     {
                         "identifier": "F02",
-                        "name": "group",
+                        "name": "group_name",
                         "datatype": "string"
                     },
                     {
@@ -308,6 +308,11 @@
                         "identifier": "F08",
                         "name": "tracking_number",
                         "datatype": "string"
+                    },
+                    {
+                        "identifier": "F09",
+                        "name": "voucher_category",
+                        "datatype": "string"
                     }
                 ]
             }
@@ -430,7 +435,7 @@
                         "identifier": "F09"
                     },
                     {
-                        "name": "closoing_value",
+                        "name": "closing_value",
                         "datatype": "number",
                         "identifier": "F10"
                     }

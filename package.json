@@ -17,8 +17,8 @@
   },
   "homepage": "https://github.com/dhananjay1405/tally-mcp-server#readme",
   "dependencies": {
+    "@duckdb/node-api": "^1.4.1-r.4",
     "@modelcontextprotocol/sdk": "^1.18.2",
-    "@neondatabase/serverless": "^1.0.2",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "fast-xml-parser": "^5.2.5",

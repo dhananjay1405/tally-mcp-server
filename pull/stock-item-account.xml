@@ -31,11 +31,11 @@
                         <SCROLLED>Vertical</SCROLLED>
                     </PART>
                     <LINE NAME="MyLine01">
-                        <FIELDS>FldDate,FldVoucherType,FldVoucherNumber,FldPartyLedger,FldQuantity,FldAmount,FldNarration,FldTrackingNumber</FIELDS>
+                        <FIELDS>FldDate,FldVoucherType,FldVoucherNumber,FldPartyLedger,FldQuantity,FldAmount,FldNarration,FldTrackingNumber,FldVoucherTypeParent</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <LINE NAME="MyLineOp">
-                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldVoucherNumberOp,FldPartyLedgerOp,FldQuantityOp,FldAmountOp,FldNarrationOp,FldTrackingNumberOp</FIELDS>
+                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldVoucherNumberOp,FldPartyLedgerOp,FldQuantityOp,FldAmountOp,FldNarrationOp,FldTrackingNumberOp,FldVoucherTypeParentOp</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <FIELD NAME="FldDate">
@@ -70,6 +70,10 @@
                         <SET>if ($$IsEmpty:$AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber or $$IsNotApplicable:$AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber) then "" else $AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber</SET>
                         <XMLTAG>F08</XMLTAG>
                     </FIELD>
+                    <FIELD NAME="FldVoucherTypeParent">
+                        <SET>$Parent:VoucherType:$VoucherTypeName</SET>
+                        <XMLTAG>F09</XMLTAG>
+                    </FIELD>
                     <FIELD NAME="FldDateOp">
                         <SET>##SVFromDate</SET>
                         <XMLTAG>F01</XMLTAG>
@@ -101,6 +105,10 @@
                     <FIELD NAME="FldTrackingNumberOp">
                         <SET>""</SET>
                         <XMLTAG>F08</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldVoucherTypeParentOp">
+                        <SET>"Opening"</SET>
+                        <XMLTAG>F09</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
                         <TYPE>Voucher</TYPE>

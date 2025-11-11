@@ -34,7 +34,7 @@
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <FIELD NAME="Fld01">
-                        <SET>$$StringFindAndReplace:($$Number:$$String:$ClosingBalance):"(-)":"-"</SET>
+                        <SET>if $$IsInwards:$ClosingBalance then $$NumValue:$ClosingBalance else -$$NumValue:$ClosingBalance</SET>
                         <XMLTAG>VALUE</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">

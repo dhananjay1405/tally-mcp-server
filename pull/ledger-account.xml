@@ -55,7 +55,7 @@
                         <XMLTAG>F04</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldAmount">
-                        <SET>$$StringFindAndReplace:(if $$IsDebit:$Amount then -$$NumValue:$Amount else $$NumValue:$Amount):"(-)":"-"</SET>
+                        <SET>if $$IsDebit:($AllLedgerEntries[1,@@FilterLedgerEqual].Amount) then -$$NumValue:$AllLedgerEntries[1,@@FilterLedgerEqual].Amount else $$NumValue:$AllLedgerEntries[1,@@FilterLedgerEqual].Amount</SET>
                         <XMLTAG>F05</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarration">
@@ -87,11 +87,12 @@
                         <XMLTAG>F06</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
-                        <TYPE>Vouchers:Ledger</TYPE>
-                        <CHILDOF>{{ledgerName | escape}}</CHILDOF>
+                        <TYPE>Voucher</TYPE>
                         <FETCH>AllLedgerEntries,Narration,PartyLedgerName</FETCH>
-                        <FILTER>FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
+                        <FILTER>FilterLedger,FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
+                    <SYSTEM TYPE="Formulae" NAME="FilterLedger">NOT $$IsEmpty:$AllLedgerEntries[1,@@FilterLedgerEqual].LedgerName</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterLedgerEqual">$LedgerName = "{ledgerName}"</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeInventoryVch">NOT $$IsInventoryVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>

@@ -58,7 +58,7 @@
                         <XMLTAG>F02</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld03_CloStk">
-                        <SET>if $$IsEmpty:($ClosingBalance:Group:$$GroupStock) then 0 else $$StringFindAndReplace:(if $$IsDebit:($ClosingBalance:Group:$$GroupStock) then -$$Number:($ClosingBalance:Group:$$GroupStock) else $$Number:($ClosingBalance:Group:$$GroupStock)):"(-)":"-"</SET>
+                        <SET>if $$IsEmpty:($ClosingBalance:Group:$$GroupStock) then 0 else (if $$IsDebit:($ClosingBalance:Group:$$GroupStock) then -$$Number:($ClosingBalance:Group:$$GroupStock) else $$Number:($ClosingBalance:Group:$$GroupStock))</SET>
                         <XMLTAG>F03</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">

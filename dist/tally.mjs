@@ -17,6 +17,19 @@ nunjucks.configure({
         commentEnd: '<comment>end</comment>'
     }
 });
+export function reportColumnMetadata(reportName) {
+    try {
+        if (Array.isArray(lstPullReport)) {
+            let objReport = lstPullReport.find(r => r.name == reportName);
+            if (objReport && Array.isArray(objReport.output.fields))
+                return objReport.output.fields;
+        }
+        return undefined;
+    }
+    catch (err) {
+        return undefined;
+    }
+}
 export function jsonToTSV(data) {
     if (!data || data.length == 0)
         return '';
@@ -186,18 +199,14 @@ function extractReport(reportConfig, reportInputParams) {
             };
             let parseDate = (iDate) => {
                 if (/^\d\d\d\d-\d\d-\d\d$/g.test(iDate))
-                    return utility.Date.format(new Date(iDate), 'dd-MMM-yyyy');
+                    return utility.Date.parse(iDate, 'yyyy-MM-dd');
                 else if (/^\d?\d-\w\w\w-\d\d\d\d$/g.test(iDate))
-                    return iDate.padStart(11, '0');
+                    return utility.Date.parse(iDate, 'd-MMM-yyyy');
                 else if (/^\d?\d-\w\w\w-\d\d$/g.test(iDate)) {
-                    let _iDate = utility.Date.parse(iDate, 'd-MMM-yy');
-                    if (_iDate)
-                        return utility.Date.format(_iDate, 'dd-MMM-yyyy');
-                    else
-                        return '';
+                    return utility.Date.parse(iDate, 'd-MMM-yy');
                 }
                 else
-                    return '';
+                    return null;
             };
             const parseQuantity = (iStr) => {
                 let regPatOutput = /^(-?\d+\.\d+|-?\d+)\s.+/g.exec(iStr);
@@ -230,6 +239,8 @@ function extractReport(reportConfig, reportInputParams) {
                                 value = processRows(targetObjRows[r][tagName], prop.fields); //recursive call to process nested array
                             else if (datatype == 'number')
                                 value = parseNumber(_value);
+                            else if (datatype == 'date')
+                                value = parseDate(_value);
                             else if (datatype == 'boolean')
                                 value = _value == '1';
                             else if (datatype == 'quantity')

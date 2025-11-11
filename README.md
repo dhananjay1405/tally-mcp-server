@@ -18,7 +18,7 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v5.zip](https://excelkida.com/resource/tally-mcp-server-v5.zip)
+[https://excelkida.com/resource/tally-mcp-server-v6.zip](https://excelkida.com/resource/tally-mcp-server-v6.zip)
 
 ## Supported Platform
 Implementation was tested on below AI platform
@@ -36,7 +36,8 @@ Simply download &amp; extract zip file somewhere on the disk.  Assuming that we 
 ```
 D:\Software\Tally MCP Server
 ```
-![My Computer view Tally MCP Server](https://excelkida.com/image/github/explorer-tally-mcp-server.png)
+
+<image src="https://excelkida.com/image/github/explorer-tally-mcp-server.png" height="265" width="766" />
 
 A sample setup for few popular tools is demonstrated.
 
@@ -45,7 +46,8 @@ Desktop version of Claude AI supports loading of local MCP server. Ensure you ha
 [claude.ai/download](https://claude.ai/download)
 
 Go to menu &gt; File &gt; Settings &gt; Developer
-![Claude AI Desktop - Developer Settings](https://excelkida.com/image/github/claude-desktop-developer-setting.png)
+
+<image src="https://excelkida.com/image/github/claude-desktop-developer-setting.png" height="751" width="1045" />
 
 This will open My Computer window. Right click and edit **claude_desktop_config.json** file (via Notepad) with as below JSON
 ```json
@@ -63,7 +65,8 @@ This will open My Computer window. Right click and edit **claude_desktop_config.
 Save the file. Close Claude Desktop (menu &gt; File &gt; Exit) and again re-launch it.
 
 Verify by clicking on Tools button and check if Tally Prime appears in the list (screenshot below)
-![Claude Desktop - Tally MCP Server tool listing](https://excelkida.com/image/github/claude-desktop-tally-mcp-server-tool-display.png)
+
+<image src="https://excelkida.com/image/github/claude-desktop-tally-mcp-server-tool-display.png" height="595" width="722" />
 
 ### Perplexity Desktop
 Perplexity Desktop version for MacOS supports connecting to local MCP server. Configuration file (JSON format) is same as demonstrated for Claude Desktop. In absense of MacBook, documentation with screenshot could not be written. Kindly refer to below blog on perplexity website, which explains the steps.

@@ -47,7 +47,7 @@
                         <XMLTAG>F03</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld04">
-                        <SET>if $$IsEmpty:$OpeningValue then 0 else $$Number:$OpeningValue</SET>
+                        <SET>if $$IsEmpty:$OpeningValue then 0 else (if $$IsDebit:$OpeningValue then $$Number:$OpeningValue else -$$Number:$OpeningValue)</SET>
                         <XMLTAG>F04</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld05">
@@ -55,15 +55,15 @@
                         <XMLTAG>F05</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld06">
-                        <SET>if $$IsEmpty:$InwardValue then 0 else $$Number:$InwardValue</SET>
+                        <SET>if $$IsEmpty:$InwardValue then 0 else (if $$IsDebit:$InwardValue then $$Number:$InwardValue else -$$Number:$InwardValue)</SET>
                         <XMLTAG>F06</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld07">
-                        <SET>if $$IsEmpty:$OutwardQuantity then 0 else (if $$IsInwards:$OutwardQuantity then $$Number:$$String:$OutwardQuantity:"Tail Units" else -$$Number:$$String:$OutwardQuantity:"Tail Units")</SET>
+                        <SET>if $$IsEmpty:$OutwardQuantity then 0 else (if $$IsInwards:$OutwardQuantity then -$$Number:$$String:$OutwardQuantity:"Tail Units" else $$Number:$$String:$OutwardQuantity:"Tail Units")</SET>
                         <XMLTAG>F07</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld08">
-                        <SET>if $$IsEmpty:$OutwardValue then 0 else $$Number:$OutwardValue</SET>
+                        <SET>if $$IsEmpty:$OutwardValue then 0 else (if $$IsDebit:$OutwardValue then -$$Number:$OutwardValue else $$Number:$OutwardValue)</SET>
                         <XMLTAG>F08</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld09">
@@ -71,7 +71,7 @@
                         <XMLTAG>F09</XMLTAG>
                     </FIELD>
                     <FIELD NAME="Fld10">
-                        <SET>if $$IsEmpty:$ClosingValue then 0 else $$Number:$ClosingValue</SET>
+                        <SET>if $$IsEmpty:$ClosingValue then 0 else (if $$IsDebit:$ClosingValue then $$Number:$ClosingValue else -$$Number:$ClosingValue)</SET>
                         <XMLTAG>F10</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
