@@ -1,0 +1,22 @@
+<ENVELOPE>
+	<HEADER>
+		<VERSION>1</VERSION>
+		<TALLYREQUEST>Export</TALLYREQUEST>
+		<TYPE>Data</TYPE>
+		<ID>MyTallyLiveReport</ID>
+	</HEADER>
+	<BODY>
+		<DESC>
+			<TDL>
+				<TDLMESSAGE>
+					<REPORT NAME="MyTallyLiveReport">
+						<USE>{{ targetReport }}</USE>
+                        {% for variable in variables %}
+						<SET>{{ variable.name }} : "{{ variable.value | escape }}"</SET>
+                        {% endfor %}
+					</REPORT>
+				</TDLMESSAGE>
+			</TDL>
+		</DESC>
+	</BODY>
+</ENVELOPE>

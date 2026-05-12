@@ -1,0 +1,76 @@
+<ENVELOPE>
+	<HEADER>
+		<VERSION>1</VERSION>
+		<TALLYREQUEST>Export</TALLYREQUEST>
+		<TYPE>Data</TYPE>
+        <ID>MyTallyLiveReport</ID>
+	</HEADER>
+	<BODY>
+		<DESC>
+            <STATICVARIABLES>
+                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                {% if fromDate %}
+                <SVFROMDATE>{{ fromDate | formatDate("d-MMM-yyyy") }}</SVFROMDATE>
+                {% endif %}
+                {% if toDate %}
+                <SVTODATE>{{ toDate | formatDate("d-MMM-yyyy") }}</SVTODATE>
+                {% endif %}
+                {% if targetCompany %}
+                <SVCURRENTCOMPANY>{{ targetCompany | escape }}</SVCURRENTCOMPANY>
+                {% endif %}
+            </STATICVARIABLES>            
+            <TDL>
+				<TDLMESSAGE>
+                    <REPORT NAME="MyTallyLiveReport">
+                        <FORMS>MyForm</FORMS>
+                    </REPORT>
+                    <FORM NAME="MyForm">
+                        <PARTS>MyPart01</PARTS>
+                        <XMLTAG>DATA</XMLTAG>
+                    </FORM>
+                    <PART NAME="MyPart01">
+                        <LINES>MyLine01</LINES>
+                        <REPEAT>MyLine01 : MyCollection</REPEAT>
+                        <SCROLLED>Vertical</SCROLLED>
+                    </PART>
+                    <LINE NAME="MyLine01">
+                        <FIELDS>{% set comma = joiner() %}{% for field in fields -%}{{ comma() }}fld_{{ field.name }}{%- endfor %}</FIELDS>
+                        <XMLTAG>ROW</XMLTAG>
+                    </LINE>
+                    {% for field in fields %}
+                    <FIELD NAME="fld_{{ field.name }}">
+                        {% if field.expression %}
+                        <SET>{{ field.expression }}</SET>
+                        {% elif field.datatype == "date" %}
+                        <SET>if $$IsEmpty:${{ field.name }} then "" else $$PyrlYYYYMMDDFormat:${{ field.name }}:"-"</SET>
+                        {% elif field.datatype == "boolean" %}
+                        <SET>if ${{ field.name }} then 1 else 0</SET>
+                        {% elif field.datatype == "amount" %}
+                        <SET>$$StringFindAndReplace:(if $$IsDebit:${{ field.name }} then -$$NumValue:${{ field.name }} else $$NumValue:${{ field.name }}):"(-)":"-"</SET>
+                        {% elif field.datatype == "number" %}
+                        <SET>if $$IsEmpty:${{ field.name }} then 0 else $$StringFindAndReplace:($$String:${{ field.name }}):"(-)":"-"</SET>
+                        {% elif field.datatype == "quantity" %}
+                        <SET>$$StringFindAndReplace:(if $$IsInwards:${{ field.name }} then $$Number:$$String:${{ field.name }}"TailUnits" else -$$Number:$$String:${{ field.name }}:"TailUnits"):"(-)":"-"</SET>
+                        {% elif field.datatype == "rate" %}
+                        <SET>if $$IsEmpty:${{ field.name }} then 0 else $$Number:${{ field.name }}</SET>
+                        {% else %}
+                        <SET>${{ field.name }}</SET>
+                        {% endif %}
+                        <XMLTAG>{{ field.name }}</XMLTAG>
+                    </FIELD>
+                    {% endfor %}
+                    <COLLECTION NAME="MyCollection">
+                        <TYPE>{{ collection }}</TYPE>
+                        {% if filters.length %}
+                        <FILTER>{% set comma = joiner() %}{% for filter in filters -%}{{ comma() }}fltr_{{ filter.name }}{%- endfor %}</FILTER>
+                        <FETCH>{% set comma = joiner() %}{% for field in fields -%}{{ comma() }}fld_{{ field.name }}{%- endfor %}</FETCH>
+                        {% endif %}
+                    </COLLECTION>
+                    {% for filter in filters %}
+                    <SYSTEM TYPE="Formulae" NAME="fltr_{{ filter.name }}">{{ filter.expression }}</SYSTEM>
+                    {% endfor %}
+                </TDLMESSAGE>
+            </TDL>
+		</DESC>
+	</BODY>
+</ENVELOPE>

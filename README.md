@@ -18,7 +18,11 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v6.zip](https://excelkida.com/resource/tally-mcp-server-v6.zip)
+[https://excelkida.com/resource/tally-mcp-server-v7.zip](https://excelkida.com/resource/tally-mcp-server-v7.zip)
+
+Last updated: version **7.0** [12-May-2026]
+
+Refer docs/CHANGELOG.md for details
 
 ## Supported Platform
 Implementation was tested on below AI platform
@@ -80,33 +84,80 @@ This mode of setup is to be used, when using browser-based MCP client like ChatG
 
 ## Available Tools
 
-### list-master
-Extracts list of specific master for auto-completion and validation if master exists, during inference by LLM
+This server currently exposes 19 MCP tools.
+
+### metadata-collection
+Returns metadata for supported collections.
+
+**Input**
+No input.
+
+**Output**
+JSON array with objects containing:
+1. `collection`
+1. `description`
+
+### query-option-values
+Returns predefined option values used by input fields.
 
 **Input**
 |Argument|Description|
 |--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|collection|Valid collection of Tally|
+|optionName|Supported: `country-state`|
 
 **Output**
-List (or array) of queries master
+JSON array of option values for the selected option name.
 
-Collections that can be queried:
-1. Group
-1. Ledger
-1. VoucherType
-1. Unit
-1. Godown
-1. StockGroup
-1. StockItem
-1. CostCentre
-1. CostCategory
-1. AttendanceType
-1. Company
-1. Currency
-1. GSTIN
-1. GSTClassification
+### metadata-fields
+Returns field metadata for a selected collection.
+
+**Input**
+|Argument|Description|
+|--|--|
+|collection|Collection name. Use `metadata-collection` to discover valid values|
+
+**Output**
+JSON array of field metadata containing field name, description (if any), and normalized datatype (`string`, `number`, `date`, `boolean`).
+
+### query-database
+Runs SQL query on in-memory pglite tables previously created by reporting tools.
+
+**Input**
+|Argument|Description|
+|--|--|
+|sql|SELECT query only|
+|outputFormat|One of `JSON Array of Objects`, `JSON with Schema and Rows`, `CSV`, `Markdown Table`. Default is JSON Array of Objects which is preferred format|
+
+**Output**
+Query result in tab-separated text format.
+
+### query-collection
+Queries a Tally collection for selected fields and caches output in an in-memory table.
+
+**Input**
+|Argument|Description|
+|--|--|
+|collection|Collection name|
+|fields|Array of field names to fetch|
+|targetCompany (optional)|Company name (defaults to active company)|
+|fromDate (optional)|Date in YYYY-MM-DD|
+|toDate (optional)|Date in YYYY-MM-DD|
+
+**Output**
+JSON: `{ "tableID": "..." }`
+
+### list-master
+Fetches list of masters for validation and auto-completion.
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name (defaults to active company)|
+|collection|One of: `group`, `ledger`, `vouchertype`, `unit`, `godown`, `stockgroup`, `stockitem`, `costcategory`, `costcentre`, `attendancetype`, `company`, `currency`, `gstin`, `gstclassification`|
+|containsFilter (optional)|filter to apply CONTAINS operation to restrict values|
+
+**Output**
+JSON: `{ "list": [ ... ] }`
 
 ### chart-of-accounts
 Extracts Chart of Accounts (or Group hierarchy) useful for preparing Balance Sheet, Profit and Loss, Trial Balance
@@ -114,186 +165,229 @@ Extracts Chart of Accounts (or Group hierarchy) useful for preparing Balance She
 **Input**
 |Argument|Description|
 |--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
+|targetCompany (optional)|Company name (defaults to active company)|
 
 **Output**
-Tabular output with columns as below
-
-|Column|Description|
-|--|--|
-|group|Ledger name|
-|parent|Group under which ledger exists|
-|bs_pl|BS (Balance Sheet) / PL (Profit &amp; Loss)|
-|dr_cr|D (Debit) / C (Credit)|
-|affects_gross_profit|Y (Yes) / N (No)|
-
+JSON: `{ "tableID": "..." }` with columns:
+1. `group_name`
+1. `group_parent`
+1. `bs_pl` (boolean) [**true** = Profit &amp; Loss  / **false** = Balance Sheet]
+1. `dr_cr` (boolean) [**true** = Debit / **false** = Credit]
+1. `affects_gross_profit` (boolean) [**true** = Affects Gross Profit / **false** = Does not affect Gross Profit]
+1. `sort_position` (number)
 
 ### trial-balance
-Extracts Trial Balance for the specified period
+Fetches trial balance for period.
 
 **Input**
 |Argument|Description|
 |--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|fromDate|Period start date (useful for opening balance)|
-|toDate|Period end date for closing balance|
+|targetCompany (optional)|Company name (defaults to active company)|
+|fromDate|Date in YYYY-MM-DD|
+|toDate|Date in YYYY-MM-DD|
+|group_name (optional)|Filter by group name|
 
 **Output**
-Tabular output with columns as below
-
-|Column|Description|
-|--|--|
-|ledger|Ledger name|
-|group|Group under which ledger exists|
-|opening_balance|Opening Balance for the specified fromDate|
-|net_debit|Net Debit during the specified period|
-|net_credit|Net Credit during the specified period|
-|closing_balance|Closing Balance for the specified fromDate|
-
-
-### balance-sheet
-Extracts Balance Sheet as on date
-
-**Input**
-|Argument|Description|
-|--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|toDate|as on date of Balance Sheet|
-
-**Output**
-Tabular output with columns as below
-
-|Column|Description|
-|--|--|
-|ledger|Ledger name|
-|group|Group under which ledger exists|
-|closing_balance|Closing Balance as on date|
+JSON: `{ "tableID": "..." }` with columns:
+1. `ledger_name`
+1. `group_name`
+1. `opening_balance` (number) [**negative** = Debit / **positive** = Credit]
+1. `net_debit`
+1. `net_credit`
+1. `closing_balance` (number) [**negative** = Debit / **positive** = Credit]
 
 ### profit-loss
-Extracts Profit &amp; Loss for the period
+Fetches profit and loss data for period.
 
 **Input**
 |Argument|Description|
 |--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|fromDate|Period start date|
-|toDate|Period end date|
+|targetCompany (optional)|Company name (defaults to active company)|
+|fromDate|Date in YYYY-MM-DD|
+|toDate|Date in YYYY-MM-DD|
 
 **Output**
-Tabular output with columns as below
+JSON: `{ "tableID": "..." }` with columns:
+1. `ledger_name`
+1. `group_name`
+1. `closing_balance` (number) [**negative** = Debit / **positive** = Credit]
 
-|Column|Description|
+### balance-sheet
+Fetches balance sheet data for period.
+
+**Input**
+|Argument|Description|
 |--|--|
-|ledger|Ledger name|
-|group|Group under which ledger exists|
-|amount|Amount of net activity (-ve = Expense / +ve = Income)|
+|targetCompany (optional)|Company name (defaults to active company)|
+|fromDate|Date in YYYY-MM-DD|
+|toDate|Date in YYYY-MM-DD|
 
+**Output**
+JSON: `{ "tableID": "..." }` with columns:
+1. `ledger_name`
+1. `group_name`
+1. `closing_balance` (number) [**negative** = Debit / **positive** = Credit]
+
+### stock-summary
+Fetches stock item summary for period.
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name (defaults to active company)|
+|fromDate|Date in YYYY-MM-DD|
+|toDate|Date in YYYY-MM-DD|
+|stockGroup (optional)|Filter by stock group name|
+
+**Output**
+JSON: `{ "tableID": "..." }` with columns:
+1. `stock_item_name`
+1. `stock_group_name`
+1. `opening_quantity` (number)
+1. `opening_value` (number) [**negative** = Debit / **positive** = Credit]
+1. `inward_quantity` (number)
+1. `inward_value` (number)
+1. `outward_quantity` (number)
+1. `outward_value` (number)
+1. `closing_quantity` (number)
+1. `closing_value` (number) [**negative** = Debit / **positive** = Credit]
 
 ### ledger-balance
-Returns closing balance of ledger as on specified date
+Returns ledger closing balance as on date.
 
 **Input**
 |Argument|Description|
 |--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|ledgerName|Ledger of which to query balance|
-|toDate|specific date for closing balance|
+|targetCompany (optional)|Company name (defaults to active company)|
+|ledgerName|Exact ledger name|
+|toDate|Date in YYYY-MM-DD|
 
 **Output**
-Closing Balance of ledger (if exists)
-
-|Sign|Description|
-|--|--|
-|Negative (-)|Debit|
-|Positive (+)|Credit|
-
-Note: If specified ledger does not exists, LLM might invoke list-master tool to fetch list of ledgers. It will attempt to find closest possible ledger name for this list and re-run this action. This might produce un-predictable response.
-
-### ledger-account
-Extracts ledger account for the specified ledger for the given period
-
-**Input**
-|Argument|Description|
-|--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|ledgerName|Ledger of which to query balance|
-|fromDate|period start date|
-|toDate|period end date|
-
-**Output**
-Tabular output with columns as below
-
-|Column|Description|
-|--|--|
-|date|Date of voucher|
-|voucher_type|Voucher Type|
-|voucher_number|Voucher Number|
-|party_ledger|Party ledger or opposite side ledger|
-|amount|Amount (negative = Debit / positive = Credit)|
-|narration|Narration or Remarks of voucher|
+JSON: `{ "amount": number }` where negative = Debit and positive = Credit.
 
 ### stock-item-balance
-Returns available quantity of stock item as on specified date
+Returns stock item closing quantity as on date.
 
 **Input**
 |Argument|Description|
 |--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|itemName|Stock Item of which to query available quantity|
-|toDate|specific date as on which to check quantity|
+|targetCompany (optional)|Company name (defaults to active company)|
+|itemName|Exact stock item name|
+|toDate|Date in YYYY-MM-DD|
 
 **Output**
-Available Quantity of stock item (if exists)
-
-
-Note: If specified stock item does not exists, LLM might invoke list-master tool to fetch list of stock items. It will attempt to find closest possible stock item name for this list and re-run this action. This might produce un-predictable response.
-
-
-### stock-item-account
-Extracts account statement for stock item vouchers for the specified item for the given period
-
-**Input**
-|Argument|Description|
-|--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|itemName|Ledger of which to query balance|
-|fromDate|period start date|
-|toDate|period end date|
-
-**Output**
-Tabular output with columns as below
-
-|Column|Description|
-|--|--|
-|date|Date of voucher|
-|voucher_type|Voucher Type|
-|voucher_number|Voucher Number|
-|party_ledger|Party ledger or opposite side ledger|
-|quantity|Quantity (negative = Outward / positive = Inward)|
-|amount|Amount (negative = Debit / positive = Credit)|
-|narration|Narration or Remarks of voucher|
-|tracking_number|Tracking number to reconcile pending quantity received by ignoring excess / missing quantity in actual purchase (against receipt note) and sales (against delivery note)|
+JSON: `{ "quantity": number, "unit_of_measurement": string }` when found.
 
 ### bills-outstanding
-Extracts bill-wise outstanding Receivables / Payables report
+Fetches receivable/payable bill-wise outstanding as on date.
 
 **Input**
 |Argument|Description|
 |--|--|
-|targetCompany (optional)|Company name of the target company in Tally. Skipping this defaults to Active company|
-|nature|receivable / payable|
-|toDate|Date on which outstanding position to fetch|
+|targetCompany (optional)|Company name (defaults to active company)|
+|nature|`receivable` or `payable`|
+|toDate|Date in YYYY-MM-DD|
 
 **Output**
-Tabular output with columns as below
+JSON: `{ "tableID": "..." }` with columns:
+1. `bill_date`
+1. `reference_number`
+1. `outstanding_amount`
+1. `party_name`
+1. `overdue_days`
 
-|Column|Description|
+### ledger-account
+Fetches ledger account statement for period.
+
+**Input**
+|Argument|Description|
 |--|--|
-|date|Date of purchase / sales invoice|
-|reference_number|Invoice number of purchase / sales invoice|
-|outstanding_amount|Pending amount as on date|
-|party_name|Ledger name of the party|
-|overdue_days|Count of days by which invoice is overdue|
+|targetCompany (optional)|Company name (defaults to active company)|
+|ledgerName|Ledger name|
+|fromDate|Date in YYYY-MM-DD|
+|toDate|Date in YYYY-MM-DD|
+
+**Output**
+JSON: `{ "tableID": "..." }` with columns:
+1. `date`
+1. `voucher_type`
+1. `voucher_number`
+1. `party_name`
+1. `amount` (number) [**negative** = Debit / **positive** = Credit]
+1. `narration`
+
+### stock-item-account
+Fetches stock item account statement for period.
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name (defaults to active company)|
+|itemName|Stock item name|
+|fromDate|Date in YYYY-MM-DD|
+|toDate|Date in YYYY-MM-DD|
+
+**Output**
+JSON: `{ "tableID": "..." }` with columns:
+1. `date`
+1. `voucher_type`
+1. `voucher_number`
+1. `party_ledger`
+1. `quantity`
+1. `amount` (number) [**negative** = Debit / **positive** = Credit]
+1. `narration`
+1. `tracking_number`
+1. `voucher_category`
+
+### ledger-create-update
+Creates or updates one or more ledger.
+
+**Note: This tool has ability to modify existing ledger. Always backup your Company before instructing this tool.**
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name (defaults to active company)|
+|masters|Array of ledger master objects to create/update|
+
+Master ledger object accepts following
+
+|Property|Description|
+|--|--|
+|name|Ledger name or New Ledger name (during update)|
+|_name|Existing ledger name|
+|parent|Group under which ledger would exists|
+|openingBalance|(optional) Opening Balance of the Ledger|
+|isBillWise|(optional) flag to set Bill-by-Bill referencing|
+|billCreditPeriod|(optional) Credit Period for bill in days|
+|mailingDetails|(optional) Business Name for mailing purpose, country, state, pincode, address|
+|gstRegistrationDetails|(optional) GST registration details like GST Number, Registration Type, Place of Supply (state)|
+
+**Output**
+JSON result returned by import operation (success/failure details).
+
+### set-company
+Sets active company context in Tally Prime.
+
+**Input**
+|Argument|Description|
+|--|--|
+|companyName|Company name to activate|
+
+**Output**
+JSON string: `"OK"` on success.
+
+### set-period
+Sets active reporting period context in Tally Prime.
+
+**Input**
+|Argument|Description|
+|--|--|
+|fromDate|Start date in YYYY-MM-DD|
+|toDate|End date in YYYY-MM-DD|
+
+**Output**
+JSON string: `"OK"` on success.
 
 ## Contact
 Project developed & maintained by: **Dhananjay Gokhale**

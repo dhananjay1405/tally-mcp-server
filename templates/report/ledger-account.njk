@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ENVELOPE>
     <HEADER>
         <VERSION>1</VERSION>
@@ -10,11 +9,11 @@
         <DESC>
             <STATICVARIABLES>
                 <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                <SVFROMDATE>{fromDate}</SVFROMDATE>
-                <SVTODATE>{toDate}</SVTODATE>
-                <nunjuck>if targetCompany</nunjuck>
-                <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
-                <nunjuck>endif</nunjuck>
+                <SVFROMDATE>{{ fromDate | formatDate("d-MMM-yyyy") }}</SVFROMDATE>
+                <SVTODATE>{{ toDate | formatDate("d-MMM-yyyy") }}</SVTODATE>
+                {% if targetCompany %}
+                <SVCURRENTCOMPANY>{{ targetCompany | escape }}</SVCURRENTCOMPANY>
+                {% endif %}
             </STATICVARIABLES>
             <TDL>
                 <TDLMESSAGE>
@@ -40,51 +39,51 @@
                     </LINE>
                     <FIELD NAME="FldDate">
                         <SET>$Date</SET>
-                        <XMLTAG>F01</XMLTAG>
+                        <XMLTAG>date</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherType">
                         <SET>$VoucherTypeName</SET>
-                        <XMLTAG>F02</XMLTAG>
+                        <XMLTAG>voucher_type</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherNumber">
                         <SET>$VoucherNumber</SET>
-                        <XMLTAG>F03</XMLTAG>
+                        <XMLTAG>voucher_number</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldPartyLedger">
                         <SET>$PartyLedgerName</SET>
-                        <XMLTAG>F04</XMLTAG>
+                        <XMLTAG>party_ledger</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldAmount">
                         <SET>if $$IsDebit:($AllLedgerEntries[1,@@FilterLedgerEqual].Amount) then -$$NumValue:$AllLedgerEntries[1,@@FilterLedgerEqual].Amount else $$NumValue:$AllLedgerEntries[1,@@FilterLedgerEqual].Amount</SET>
-                        <XMLTAG>F05</XMLTAG>
+                        <XMLTAG>amount</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarration">
                         <SET>$Narration</SET>
-                        <XMLTAG>F06</XMLTAG>
+                        <XMLTAG>narration</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldDateOp">
                         <SET>##SVFromDate</SET>
-                        <XMLTAG>F01</XMLTAG>
+                        <XMLTAG>date</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherTypeOp">
                         <SET>"Opening"</SET>
-                        <XMLTAG>F02</XMLTAG>
+                        <XMLTAG>voucher_type</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherNumberOp">
                         <SET>""</SET>
-                        <XMLTAG>F03</XMLTAG>
+                        <XMLTAG>voucher_number</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldPartyLedgerOp">
                         <SET>""</SET>
-                        <XMLTAG>F04</XMLTAG>
+                        <XMLTAG>party_ledger</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldAmountOp">
-                        <SET>if $$IsDebit:$OpeningBalance:Ledger:"{ledgerName}" then -$$NumValue:$OpeningBalance:Ledger:"{ledgerName}" else $$NumValue:$OpeningBalance:Ledger:"{ledgerName}"</SET>
-                        <XMLTAG>F05</XMLTAG>
+                        <SET>if $$IsDebit:$OpeningBalance:Ledger:"{{ ledgerName }}" then -$$NumValue:$OpeningBalance:Ledger:"{{ ledgerName }}" else $$NumValue:$OpeningBalance:Ledger:"{{ ledgerName }}"</SET>
+                        <XMLTAG>amount</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarrationOp">
                         <SET>""</SET>
-                        <XMLTAG>F06</XMLTAG>
+                        <XMLTAG>narration</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
                         <TYPE>Voucher</TYPE>
@@ -92,7 +91,7 @@
                         <FILTER>FilterLedger,FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
                     <SYSTEM TYPE="Formulae" NAME="FilterLedger">NOT $$IsEmpty:$AllLedgerEntries[1,@@FilterLedgerEqual].LedgerName</SYSTEM>
-                    <SYSTEM TYPE="Formulae" NAME="FilterLedgerEqual">$LedgerName = "{ledgerName}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterLedgerEqual">$LedgerName = "{{ ledgerName }}"</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeInventoryVch">NOT $$IsInventoryVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>

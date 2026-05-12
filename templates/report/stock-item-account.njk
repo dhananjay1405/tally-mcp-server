@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ENVELOPE>
     <HEADER>
         <VERSION>1</VERSION>
@@ -10,11 +9,11 @@
         <DESC>
             <STATICVARIABLES>
                 <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                <SVFROMDATE>{fromDate}</SVFROMDATE>
-                <SVTODATE>{toDate}</SVTODATE>
-                <nunjuck>if targetCompany</nunjuck>
-                <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
-                <nunjuck>endif</nunjuck>
+                <SVFROMDATE>{{ fromDate | formatDate("d-MMM-yyyy") }}</SVFROMDATE>
+                <SVTODATE>{{ toDate | formatDate("d-MMM-yyyy") }}</SVTODATE>
+                {% if targetCompany %}
+                <SVCURRENTCOMPANY>{{ targetCompany | escape }}</SVCURRENTCOMPANY>
+                {% endif %}
             </STATICVARIABLES>
             <TDL>
                 <TDLMESSAGE>
@@ -40,75 +39,75 @@
                     </LINE>
                     <FIELD NAME="FldDate">
                         <SET>$Date</SET>
-                        <XMLTAG>F01</XMLTAG>
+                        <XMLTAG>date</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherType">
                         <SET>$VoucherTypeName</SET>
-                        <XMLTAG>F02</XMLTAG>
+                        <XMLTAG>voucher_type</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherNumber">
                         <SET>$VoucherNumber</SET>
-                        <XMLTAG>F03</XMLTAG>
+                        <XMLTAG>voucher_number</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldPartyLedger">
                         <SET>$PartyLedgerName</SET>
-                        <XMLTAG>F04</XMLTAG>
+                        <XMLTAG>party_ledger</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldQuantity">
                         <SET>if $$IsInwards:$AllInventoryEntries[1,@@FilterItemEqual].BilledQty then $$Number:$AllInventoryEntries[1,@@FilterItemEqual].BilledQty else -$$Number:$AllInventoryEntries[1,@@FilterItemEqual].BilledQty</SET>
-                        <XMLTAG>F05</XMLTAG>
+                        <XMLTAG>quantity</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldAmount">
                         <SET>if $$IsDebit:($AllInventoryEntries[1,@@FilterItemEqual].Amount) then -$$NumValue:$AllInventoryEntries[1,@@FilterItemEqual].Amount else $$NumValue:$AllInventoryEntries[1,@@FilterItemEqual].Amount</SET>
-                        <XMLTAG>F06</XMLTAG>
+                        <XMLTAG>amount</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarration">
                         <SET>$Narration</SET>
-                        <XMLTAG>F07</XMLTAG>
+                        <XMLTAG>narration</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldTrackingNumber">
                         <SET>if ($$IsEmpty:$AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber or $$IsNotApplicable:$AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber) then "" else $AllInventoryEntries[1,@@FilterItemEqual].TrackingNumber</SET>
-                        <XMLTAG>F08</XMLTAG>
+                        <XMLTAG>tracking_number</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherTypeParent">
                         <SET>$Parent:VoucherType:$VoucherTypeName</SET>
-                        <XMLTAG>F09</XMLTAG>
+                        <XMLTAG>voucher_category</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldDateOp">
                         <SET>##SVFromDate</SET>
-                        <XMLTAG>F01</XMLTAG>
+                        <XMLTAG>date</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherTypeOp">
                         <SET>"Opening"</SET>
-                        <XMLTAG>F02</XMLTAG>
+                        <XMLTAG>voucher_type</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherNumberOp">
                         <SET>""</SET>
-                        <XMLTAG>F03</XMLTAG>
+                        <XMLTAG>voucher_number</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldPartyLedgerOp">
                         <SET>""</SET>
-                        <XMLTAG>F04</XMLTAG>
+                        <XMLTAG>party_ledger</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldQuantityOp">
-                        <SET>if $$IsInwards:$OpeningBalance:StockItem:"{itemName}" then $$NumValue:$OpeningBalance:StockItem:"{itemName}" else -$$NumValue:$OpeningBalance:StockItem:"{itemName}"</SET>
-                        <XMLTAG>F05</XMLTAG>
+                        <SET>if $$IsInwards:$OpeningBalance:StockItem:"{{ itemName }}" then $$NumValue:$OpeningBalance:StockItem:"{{ itemName }}" else -$$NumValue:$OpeningBalance:StockItem:"{{ itemName }}"</SET>
+                        <XMLTAG>quantity</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldAmountOp">
-                        <SET>if $$IsDebit:$OpeningValue:StockItem:"{itemName}" then -$$NumValue:$OpeningValue:StockItem:"{itemName}" else $$NumValue:$OpeningValue:StockItem:"{itemName}"</SET>
-                        <XMLTAG>F06</XMLTAG>
+                        <SET>if $$IsDebit:$OpeningValue:StockItem:"{{ itemName }}" then -$$NumValue:$OpeningValue:StockItem:"{{ itemName }}" else $$NumValue:$OpeningValue:StockItem:"{{ itemName }}"</SET>
+                        <XMLTAG>amount</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldNarrationOp">
                         <SET>""</SET>
-                        <XMLTAG>F07</XMLTAG>
+                        <XMLTAG>narration</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldTrackingNumberOp">
                         <SET>""</SET>
-                        <XMLTAG>F08</XMLTAG>
+                        <XMLTAG>tracking_number</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherTypeParentOp">
                         <SET>"Opening"</SET>
-                        <XMLTAG>F09</XMLTAG>
+                        <XMLTAG>voucher_category</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
                         <TYPE>Voucher</TYPE>
@@ -116,7 +115,7 @@
                         <FILTER>FilterStockItem,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
                     <SYSTEM TYPE="Formulae" NAME="FilterStockItem">NOT $$IsEmpty:$AllInventoryEntries[1,@@FilterItemEqual].StockItemName</SYSTEM>
-                    <SYSTEM TYPE="Formulae" NAME="FilterItemEqual">$StockItemName = "{itemName}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterItemEqual">$StockItemName = "{{ itemName }}"</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterInventoryVch">$$IsInventoryVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>

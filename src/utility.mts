@@ -71,7 +71,7 @@ class _utility {
             return unsafe
                 .replace(/\&amp;/g, "&")
                 .replace(/\&lt;/g, "<")
-                .replace(/\&lt;/g, ">")
+                .replace(/\&gt;/g, ">")
                 .replace(/\&quot;/g, "\"")
                 .replace(/\&apos;/g, "'");
         }

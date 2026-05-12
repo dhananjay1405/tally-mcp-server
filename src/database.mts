@@ -1,138 +1,167 @@
 import crypto from 'node:crypto';
-import duckdb from '@duckdb/node-api';
-import { ModelPullReportOutputFieldInfo } from './models.mjs';
-import { reportColumnMetadata } from './tally.mjs';
+import { PGlite } from '@electric-sql/pglite';
 
-const instance = await duckdb.DuckDBInstance.create(':memory:');
-const conn = await instance.connect();
+const pg = await PGlite.create('memory://');
+
+const PG_DATE_OID = 1082;
+const PG_NUMERIC_OID = 1700;
 
 const generateRandomString = (): string => {
     return 't_' + crypto.randomUUID().replace(/-/g, '');
 };
 
-export function cacheTable(reportName: string, data: any[]): Promise<string> {
+export async function cacheTable(lstColumnMetadata: Map<string, string>, data: any[]): Promise<string> {
+    try {
+        // no table to be created if no data is found
+        if (!data || data.length === 0)
+            return '';
 
-    return new Promise<string>(async (resolve, reject) => {
-        try {
-            // no table to be created if no data is found
-            if (!data || data.length === 0)
-                return resolve('');
+        // generate a random table name
+        const tableId = generateRandomString();
 
-            const columns: ModelPullReportOutputFieldInfo[] = reportColumnMetadata(reportName) || [];
+        // Quote a PostgreSQL identifier to prevent injection via column names
+        const quoteIdent = (name: string) => `"${name.replace(/"/g, '""')}"`;
 
-            // generate a random table name
-            const tableId = generateRandomString();
+        let sqlCreateTable = `CREATE TABLE ${tableId} (`;
 
-            let sqlCreateTable = `CREATE OR REPLACE TABLE ${tableId} (`;
+        // iterate through each column to create table schema columns
+        for (const [colName, colType] of lstColumnMetadata) {
+            let sqlDataType = '';
+            if (colType === 'number' || colType === 'amount' || colType === 'quantity' || colType === 'rate')
+                sqlDataType = 'NUMERIC(18,4)';
+            else if (colType === 'boolean')
+                sqlDataType = 'BOOLEAN';
+            else if (colType === 'date')
+                sqlDataType = 'DATE';
+            else
+                sqlDataType = 'TEXT';
 
-            // iterate through each column to create table schema columns
-            for (const col of columns) {
-                let sqlDataType = '';
-                if (col.datatype === 'number')
-                    sqlDataType = 'DECIMAL(18,4)';
-                else if (col.datatype === 'boolean')
-                    sqlDataType = 'BOOLEAN';
-                else if (col.datatype === 'date')
-                    sqlDataType = 'DATE';
-                else
-                    sqlDataType = 'TEXT';
-
-                sqlCreateTable += `${col.name} ${sqlDataType}, `;
-            }
-
-
-            sqlCreateTable = sqlCreateTable.slice(0, -2); // remove trailing comma
-            sqlCreateTable += `);`;
-            await conn.run(sqlCreateTable);
-
-            // iterate through each row to insert data
-            const dbAppender = await conn.createAppender(tableId);
-
-            for (const row of data) {
-                for (const col of columns) {
-                    let value = row[col.name];
-                    if (col.datatype === 'number') {
-                        if (!isNaN(value)) {
-                            const n = BigInt(Math.round(value * 10000)); // 4 decimal places
-                            const _value = new duckdb.DuckDBDecimalValue(n, 18, 4);
-                            dbAppender.appendDecimal(_value);
-                        }
-                        else {
-                            dbAppender.appendNull();
-                        }
-                    }
-                    else if (col.datatype === 'boolean' && typeof value === 'boolean') {
-                        dbAppender.appendBoolean(value);
-                    }
-                    else if (col.datatype === 'date') {
-                        if (typeof value === 'object' && value instanceof Date) {
-                            // calculate days since epoch from value
-                            const daysSinceEpoch = Math.floor(value.getTime() / (1000 * 60 * 60 * 24));
-                            const _value = new duckdb.DuckDBDateValue(daysSinceEpoch);
-                            dbAppender.appendDate(_value);
-                        }
-                        else {
-                            dbAppender.appendNull();
-                        }
-                    }
-                    else {
-                        dbAppender.appendVarchar(value || '');
-                    }
-                }
-                dbAppender.endRow(); // append the row
-            }
-            dbAppender.closeSync(); // commit output into the table
-
-            // set timeout to drop the table after 15 min
-            setTimeout(async () => await conn.run(`DROP TABLE IF EXISTS ${tableId};`), 15 * 60 * 1000);
-
-            resolve(tableId);
-        } catch (err) {
-            reject(err);
-            console.error(JSON.stringify(err));
+            sqlCreateTable += `${quoteIdent(colName)} ${sqlDataType}, `;
         }
-    });
+
+        sqlCreateTable = sqlCreateTable.slice(0, -2); // remove trailing comma
+        sqlCreateTable += `);`;
+        await pg.exec(sqlCreateTable);
+
+        // iterate through each row to insert data
+        const colNames = Array.from(lstColumnMetadata.keys()).map(quoteIdent).join(', ');
+        const placeholders = Array.from(lstColumnMetadata.keys()).map((_, i) => `$${i + 1}`).join(', ');
+        const insertSQL = `INSERT INTO ${tableId} (${colNames}) VALUES (${placeholders})`;
+
+        await pg.transaction(async (tx) => {
+            for (const row of data) {
+                const values = Array.from(lstColumnMetadata.entries()).map(([colName, colType]) => {
+                    const value = row[colName];
+                    if (colType === 'number' || colType === 'amount' || colType === 'quantity' || colType === 'rate') {
+                        return !isNaN(value) ? Number(value) : null;
+                    } else if (colType === 'boolean') {
+                        return typeof value === 'boolean' ? value : null;
+                    } else if (colType === 'date') {
+                        return value instanceof Date ? value : null;
+                    } else {
+                        return value || '';
+                    }
+                });
+                await tx.query(insertSQL, values);
+            }
+        });
+
+        // set timeout to drop the table after 15 min
+        setTimeout(async () => await pg.exec(`DROP TABLE IF EXISTS ${tableId};`), 15 * 60 * 1000);
+
+        return tableId;
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
 }
 
-export async function executeSQL(sql: string): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-        try {
-            const result = await conn.runAndReadAll(sql);
-            const lstHeader = result.columnNames();
-            const lstDataType = result.columnTypes()
-            const lstData = result.getRows();
+export async function executeSQL(sql: string, format: string = 'JSON Array of Objects'): Promise<string> {
+    try {
+        // Strip comments, then enforce SELECT-only to prevent data modification or DDL injection
+        const stripped = sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\n]*/g, '').trim();
+        if (!/^select\b/i.test(stripped))
+            throw new Error('Only SELECT queries are permitted');
 
-            // write header with tab separated values
-            let retval = lstHeader.join('\t') + '\n';
+        const result = await pg.query<unknown[]>(sql, [], { rowMode: 'array' });
+        const lstHeader = result.fields.map(f => f.name);
+        const lstDataType = result.fields.map(f => f.dataTypeID);
+        const lstData = result.rows;
 
-            // iterate through each row and append tab separated values
-            for (let r = 0; r < lstData.length; r++) {
-                let lstRowValue: string[] = [];
-                for (let c = 0; c < lstHeader.length; c++) {
-                    let dataType = lstDataType[c];
-                    let cellValue = lstData[r][c]?.valueOf();
-                    let cellText  = lstData[r][c]?.toString() || '';
-                    if (dataType.typeId === duckdb.DuckDBTypeId.DATE) {
-                        // convert date to YYYY-MM-DD format
-                        if (cellValue && typeof cellValue === 'object' && cellValue instanceof Date)
-                            cellText = cellValue.toISOString().substring(0,10);
-                    }
-                    else if (dataType.typeId === duckdb.DuckDBTypeId.DECIMAL) {
-                        // convert decimal to number to get rid of extra 0
-                        if (cellValue && cellValue instanceof duckdb.DuckDBDecimalValue)
-                            cellText = cellValue.toDouble().valueOf().toString();
-                    }
-                    lstRowValue.push(cellText);
-                }
-                retval += lstRowValue.join('\t') + '\n';
+        const normalizeCellValue = (cellValue: unknown, dataTypeID: number): string | number | boolean | null => {
+            if (cellValue === null || cellValue === undefined)
+                return null;
+
+            if (dataTypeID === PG_DATE_OID) {
+                // PGlite returns DATE as 'YYYY-MM-DD' string; handle Date objects just in case
+                if (cellValue instanceof Date)
+                    return cellValue.toISOString().substring(0, 10);
+                return cellValue.toString();
             }
-            //remove last newline
-            retval = retval.slice(0, -1);
 
-            resolve(retval);
-        } catch (err) {
-            reject(err);
-            console.error(JSON.stringify(err));
+            if (dataTypeID === PG_NUMERIC_OID) {
+                // strip trailing zeros (e.g. '1.5000' -> '1.5')
+                const num = parseFloat(cellValue.toString());
+                if (!isNaN(num))
+                    return num;
+            }
+
+            if (typeof cellValue === 'boolean')
+                return cellValue;
+
+            return cellValue.toString();
+        };
+
+        const normalizedRows = lstData.map((row) => {
+            return row.map((cellValue, c) => normalizeCellValue(cellValue, lstDataType[c]));
+        });
+
+        if (format === 'CSV') {
+            const escapeCSV = (value: string): string => {
+                if (/[,"\n\r]/.test(value))
+                    return `"${value.replace(/"/g, '""')}"`;
+                return value;
+            };
+
+            let retval = lstHeader.map((h) => escapeCSV(h)).join(',') + '\n';
+            for (const row of normalizedRows) {
+                const csvRow = row.map((v) => escapeCSV(v === null ? '' : v.toString())).join(',');
+                retval += csvRow + '\n';
+            }
+            return retval.slice(0, -1);
         }
-    });
+
+        if (format === 'Markdown Table') {
+            const escapeMarkdown = (value: string): string => value.replace(/\|/g, '\\|');
+
+            let retval = '| ' + lstHeader.map((h) => escapeMarkdown(h)).join(' | ') + ' |\n';
+            retval += '| ' + lstHeader.map(() => '---').join(' | ') + ' |\n';
+            for (const row of normalizedRows) {
+                const mdRow = row.map((v) => escapeMarkdown(v === null ? '' : v.toString())).join(' | ');
+                retval += '| ' + mdRow + ' |\n';
+            }
+            return retval.slice(0, -1);
+        }
+
+        if (format === 'JSON with Schema and Rows') {
+            return JSON.stringify({
+                schema: result.fields.map(f => f.name),
+                rows: normalizedRows
+            });
+        }
+
+        // default: JSON Array of Objects
+        const rowsAsObjects = normalizedRows.map((row) => {
+            const item: Record<string, string | number | boolean | null> = {};
+            for (let c = 0; c < lstHeader.length; c++) {
+                item[lstHeader[c]] = row[c];
+            }
+            return item;
+        });
+
+        return JSON.stringify(rowsAsObjects);
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
 }

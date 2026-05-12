@@ -1,151 +1,225 @@
 import http from 'node:http';
-import fs from 'node:fs';
-import path from 'node:path';
 import nunjucks from 'nunjucks';
 import { XMLParser } from 'fast-xml-parser';
 import * as m from './models.mjs';
 import { utility } from './utility.mjs';
+import { lstCollectionFields, lstPushXml, lstReportConfig, lstReportXml, xmlInvokeAction, xmlQueryCollection } from './definition.mjs';
 
 const tally_port = parseInt(process.env.TALLY_PORT || '9000'); // default to 9000 XML port of Tally
-const __dirname = import.meta.dirname;
-const lstPullReport: m.ModelPullReportInfo[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../pull/config.json'), 'utf-8'))['reports'];
+const lstPullReport: m.ModelPullReportInfo[] = lstReportConfig;
 
-nunjucks.configure({
-    tags: {
-        blockStart: '<nunjuck>',
-        blockEnd: '</nunjuck>',
-        variableStart: '{{',
-        variableEnd: '}}',
-        commentStart: '<comment>begin</comment>',
-        commentEnd: '<comment>end</comment>'
-    }
+const nEnv = new nunjucks.Environment();
+nEnv.addFilter('formatDate', (dt: Date, format: string) => {
+    return utility.Date.format(dt, format);
 });
 
-export function reportColumnMetadata(reportName: string): m.ModelPullReportOutputFieldInfo[] | undefined {
-    try {
-        if (Array.isArray(lstPullReport)) {
-            let objReport = lstPullReport.find(r => r.name == reportName);
-            if (objReport && Array.isArray(objReport.output.fields))
-                return objReport.output.fields;
+export function renameObjectArrayProperties(source: any[], keyMap: Map<string, string>): any[] {
+    if (!Array.isArray(source) || source.length == 0)
+        return [];
+
+    if (!(keyMap instanceof Map) || keyMap.size == 0)
+        return source.map(item => item);
+
+    return source.map(item => {
+        if (!item || typeof item !== 'object' || Array.isArray(item))
+            return item;
+
+        let renamed: any = {};
+        for (const [key, value] of Object.entries(item)) {
+            let targetKey = keyMap.get(key) || key;
+            Object.defineProperty(renamed, targetKey, { enumerable: true, value });
         }
-        return undefined
+        return renamed;
+    });
+}
+
+export async function fetchReport(targetReport: string, inputParams: Map<string, any>): Promise<m.ModelPullResponse> {
+    let retval: m.ModelPullResponse = {
+        data: undefined
+    };
+
+    try {
+        let objReport = lstPullReport.find(p => p.name == targetReport);
+
+        if (objReport) {
+
+            let lstInputs = new Map<string, any>();
+
+            //set target company
+            let targetCompany = '##SVCurrentCompany'; //default value
+            if (inputParams.has('targetCompany') && typeof inputParams.get('targetCompany') == 'string')
+                targetCompany = inputParams.get('targetCompany'); //extract from request object
+
+            lstInputs.set('targetCompany', targetCompany); //add targetCompany as one of the params
+
+            //populate input parameters value
+            for (let i = 0; i < objReport.input.length; i++) {
+                let iName = objReport.input[i].name;
+                let iType = objReport.input[i].datatype;
+
+                let _value = inputParams.get(iName);
+
+                //check if validation is required
+                if (objReport.input[i].validation_regex) {
+                    let strValidationRegex = objReport.input[i].validation_regex || '';
+                    let regPtrn = new RegExp(strValidationRegex, 'i');
+                    if (typeof _value == 'string' && !regPtrn.test(_value)) {
+                        retval.error = objReport.input[i].validation_message || `Invalid value for parameter ${iName}`;
+                        return retval;
+                    }
+                }
+
+                //parse the value based on type
+                if (typeof _value == 'number' && iType == 'number')
+                    lstInputs.set(iName, _value);
+                else if (typeof _value == 'boolean' && iType == 'boolean')
+                    lstInputs.set(iName, _value);
+                else if (typeof _value == 'string' && iType == 'date' && /^\d\d-\d\d-\d\d\d\d$/.test(_value)) //Date in DD-MM-YYYY
+                    lstInputs.set(iName, utility.Date.parse(_value, 'dd-MM-yyyy'));
+                else if (typeof _value == 'string' && iType == 'date' && /^\d\d\d\d-\d\d-\d\d/.test(_value)) //ISO DateTime YYYY-MM-DDTHH:MM:SS
+                    lstInputs.set(iName, utility.Date.parse(_value.substring(0, 10), 'yyyy-MM-dd'));
+                else if (typeof _value == 'string' && iType == 'string')
+                    lstInputs.set(iName, _value);
+                else {
+                    retval.error = `Parameter ${iName} not found or contains invalid value [${_value}]`;
+                    return retval;
+                }
+            }
+            retval = await extractReport(objReport, lstInputs);
+        }
+        else
+            retval.error = 'Invalid report';
+
     } catch (err) {
-        return undefined;
+        retval.error = 'Server exception';
+    } finally {
+        return retval;
+    }
+
+}
+
+export async function queryCollection(targetCollection: string, lstFields: string[], lstFilters: Map<string, string>, targetCompany?: string, fromDate?: Date, toDate?: Date): Promise<any[]> {
+    let retval: any[] = [];
+    try {
+        let objTemplateArgs = new Map<string, any>();
+
+        //assign static variables
+        if (targetCompany)
+            objTemplateArgs.set('targetCompany', targetCompany);
+        if (fromDate)
+            objTemplateArgs.set('fromDate', fromDate);
+        if (toDate)
+            objTemplateArgs.set('toDate', toDate);
+
+        objTemplateArgs.set('collection', targetCollection);
+
+        let objCollection: m.TallyCollectionDefinition = lstCollectionFields.filter(c => c.collection == targetCollection)[0]; //load collection definition
+        let lstQueryFields = objCollection.fields.filter(f => lstFields.includes(f.name)); //filter fields based on user query
+        objTemplateArgs.set('fields', lstQueryFields); //filter fields queried by user
+
+        if (lstFilters && lstFilters.size > 0) {
+            let objFilters: m.TallyFilterDefinition[] = [];
+            for (const [k, v] of lstFilters.entries()) {
+                objFilters.push({
+                    name: k,
+                    expression: v
+                });
+            }
+            objTemplateArgs.set('filters', objFilters); //add filters to template arguments
+        }
+
+        let respContent = await sendTallyXml(xmlQueryCollection, objTemplateArgs); //send XML to Tally and get response
+
+        let xmlParser = new XMLParser({
+            parseTagValue: false,
+            isArray(tagName) {
+                return (tagName == 'ROW' || tagName.endsWith('.LIST'))
+            },
+        });
+        let resultObj = xmlParser.parse(respContent);
+        if (resultObj['DATA'] && Array.isArray(resultObj['DATA']['ROW'])) {
+            for (const rowObj of resultObj['DATA']['ROW']) {
+                let o: any = new Object();
+                for (const field of lstQueryFields) {
+                    let _value = rowObj[field.name.toUpperCase()].toString();
+                    let value: number | string | boolean | Date | null | undefined = undefined;
+                    if (field.datatype == 'boolean')
+                        value = _value == 'Yes';
+                    else if (field.datatype == 'number' || field.datatype == 'amount' || field.datatype == 'quantity' || field.datatype == 'rate')
+                        value = parseFloat(_value);
+                    else if (field.datatype == 'date')
+                        value = utility.Date.parse(_value, 'yyyy-MM-dd');
+                    else
+                        value = utility.String.unescapeHTML(_value);
+
+                    Object.defineProperty(o, field.name, { enumerable: true, value });
+                }
+                retval.push(o);
+            }
+        }
+        return retval;
+    } catch (err) {
+        throw err;
+    }
+
+};
+
+export async function invokeTallyAction(targetAction: string, lstParameters: Map<string, any>): Promise<void> {
+    try {
+        let objTemplateArgs = new Map<string, any>();
+
+        objTemplateArgs.set('targetReport', targetAction);
+
+        let variables: { name: string, value: any }[] = [];
+        lstParameters.forEach((v, k) => {
+            variables.push({ name: k, value: v });
+        });
+        objTemplateArgs.set('variables', variables);
+
+        await sendTallyXml(xmlInvokeAction, objTemplateArgs); //send XML to Tally
+    } catch (err) {
+        throw err;
+    }
+
+}
+
+export async function importMasters(targetMaster: string, objMasterInput: Map<string, any>): Promise<m.CreateUpdateDeleteStatus> {
+    try {
+        let xmlTemplate = lstPushXml.get(targetMaster) || '';
+        let respContent = await sendTallyXml(xmlTemplate, objMasterInput); //send XML to Tally and get response
+        const xmlParser = new XMLParser();
+        let resultObj = xmlParser.parse(respContent);
+        let retval: m.CreateUpdateDeleteStatus = resultObj['RESPONSE'];
+        return retval;
+    } catch (err) {
+        throw err;
     }
 }
 
-export function jsonToTSV(data: any[]): string {
-    if (!data || data.length == 0)
-        return '';
-    let headers = Object.keys(data[0]);
-    let tsv = headers.join('\t') + '\n';
-    data.forEach(row => {
-        let values = headers.map(header => {
-            let value = row[header];
-            if (typeof value === 'string') {
-                value = value.replace(/\t/g, ' ').replace(/\n/g, ' ');
-            }
-            else if(typeof value === 'object' && value instanceof Date) {
-                value = utility.Date.format(value, 'yyyy-MM-dd');
-            }
-            return value;
+async function sendTallyXml(xml: string, lstVariables: Map<string, any>): Promise<string> {
+    try {
+
+        // remove targetCompany from lstVariables if found with default value
+        if (lstVariables.has('targetCompany') && lstVariables.get('targetCompany') == '##SVCurrentCompany') {
+            lstVariables.delete('targetCompany');
+        }
+
+        let o = new Object();
+
+        // define properties for every keys in Map in object
+        lstVariables.forEach((v, k) => {
+            Object.defineProperty(o, k, { enumerable: true, value: v });
         });
-        tsv += values.join('\t') + '\n';
-    });
-    return tsv;
+
+        let xmlRequest = nEnv.renderString(xml, o);
+        let xmlResponse = await postTallyXML(xmlRequest);
+        return xmlResponse;
+    } catch (err) {
+        throw err;
+    }
 }
 
-export function handlePull(targetReport: string, inputParams: Map<string, any>): Promise<m.ModelPullResponse> {
-    return new Promise<m.ModelPullResponse>(async (resolve, reject) => {
-        let retval: m.ModelPullResponse = {
-            data: undefined
-        };
-        try {
-            let objReport = lstPullReport.find(p => p.name == targetReport);
-
-            if (objReport) {
-
-                let lstInputs = new Map<string, any>();
-
-                //set target company
-                let targetCompany = '##SVCurrentCompany'; //default value
-                if (inputParams.has('targetCompany') && typeof inputParams.get(targetCompany) == 'string')
-                    targetCompany = inputParams.get(targetCompany); //extract from request object
-
-                lstInputs.set('targetCompany', targetCompany); //add targetCompany as one of the params
-
-                //populate input parameters value
-                for (let i = 0; i < objReport.input.length; i++) {
-                    let iName = objReport.input[i].name;
-                    let iType = objReport.input[i].datatype;
-
-                    let _value = inputParams.get(iName);
-
-                    //check if validation is required
-                    if (objReport.input[i].validation_regex) {
-                        let strValidationRegex = objReport.input[i].validation_regex || '';
-                        let regPtrn = new RegExp(strValidationRegex, 'i');
-                        if (typeof _value == 'string' && !regPtrn.test(_value)) {
-                            retval.error = objReport.input[i].validation_message || `Invalid value for parameter ${iName}`;
-                            return resolve(retval);
-                        }
-                    }
-
-                    //parse the value based on type
-                    if (typeof _value == 'number' && iType == 'number')
-                        lstInputs.set(iName, _value);
-                    else if (typeof _value == 'boolean' && iType == 'boolean')
-                        lstInputs.set(iName, _value);
-                    else if (typeof _value == 'string' && iType == 'date' && /^\d\d-\d\d-\d\d\d\d$/g.test(_value)) //Date in DD-MM-YYYY
-                        lstInputs.set(iName, utility.Date.parse(_value, 'dd-MM-yyyy'));
-                    else if (typeof _value == 'string' && iType == 'date' && /^\d\d\d\d-\d\d-\d\d/g.test(_value)) //ISO DateTime YYYY-MM-DDTHH:MM:SS
-                        lstInputs.set(iName, utility.Date.parse(_value.substring(0, 10), 'yyyy-MM-dd'));
-                    else if (typeof _value == 'string' && iType == 'string')
-                        lstInputs.set(iName, _value);
-                    else {
-                        retval.error = `Parameter ${iName} not found or contains invalid value [${_value}]`;
-                        return resolve(retval);
-                    }
-                }
-                retval = await extractReport(objReport, lstInputs);
-            }
-            else
-                retval.error = 'Invalid report';
-
-        } catch (err) {
-            retval.error = 'Server exception';
-        } finally {
-            resolve(retval);
-        }
-    });
-}
-
-function sendTally(xml: string, lstVariables: Map<string, any>): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-        try {
-
-            // remove targetCompany from lstVariables if found with default value
-            if (lstVariables.has('targetCompany') && lstVariables.get('targetCompany') == '##SVCurrentCompany') {
-                lstVariables.delete('targetCompany');
-            }
-
-            let o = new Object();
-            
-            // define properties for every keys in Map in object
-            lstVariables.forEach((v, k) => {
-                Object.defineProperty(o, k, { enumerable: true, value: v });
-            });
-
-            let xmlRequest = nunjucks.renderString(xml, o);
-            let xmlResponse = await postTallyXML(xmlRequest);
-            resolve(xmlResponse);
-        } catch (err) {
-            reject('');
-        }
-    });
-}
-
-function postTallyXML(xml: string): Promise<string> {
+async function postTallyXML(xml: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         try {
 
@@ -174,9 +248,10 @@ function postTallyXML(xml: string): Promise<string> {
                             reject(httpErr);
                         });
                 });
-            req.on('error', (reqError) => {
-                if (reqError && reqError.message === 'ECONNREFUSED')
-                    reject('Unable to connect to Tally');
+            req.on('error', (reqError: NodeJS.ErrnoException) => {
+                let errorType = reqError['message'] || reqError['code'];
+                if (errorType === 'ECONNREFUSED')
+                    reject('Unable to connect to Tally. Ensure Tally is running and XML server is enabled on port ' + tally_port + ' by going to Help (F1) > Settings > Connectivity in Tally and setting Client / Server configuration, set Tally Prime is action as Server');
                 else
                     reject(reqError);
             });
@@ -187,23 +262,6 @@ function postTallyXML(xml: string): Promise<string> {
             reject(err);
         }
     });
-}
-
-function substituteTDLParameters(msg: string, substitutions: Map<string, any>): string {
-    let retval = msg;
-    substitutions.forEach((v, k) => {
-        let regPtrn = new RegExp(`\\{${k}\\}`, 'g');
-        if (typeof v === 'string')
-            retval = retval.replace(regPtrn, utility.String.escapeHTML(v));
-        else if (typeof v === 'number')
-            retval = retval.replace(regPtrn, v.toString());
-        else if (v instanceof Date)
-            retval = retval.replace(regPtrn, utility.Date.format(v, 'd-MMM-yyyy'));
-        else if (typeof v === 'boolean')
-            retval = retval.replace(regPtrn, v ? 'Yes' : 'No');
-        else;
-    });
-    return retval;
 }
 
 function extractReport(reportConfig: m.ModelPullReportInfo, reportInputParams: Map<string, any>): Promise<m.ModelPullResponse> {
@@ -220,11 +278,11 @@ function extractReport(reportConfig: m.ModelPullReportInfo, reportInputParams: M
             }
 
             let parseDate = (iDate: string): Date | null => {
-                if (/^\d\d\d\d-\d\d-\d\d$/g.test(iDate))
+                if (/^\d\d\d\d-\d\d-\d\d$/.test(iDate))
                     return utility.Date.parse(iDate, 'yyyy-MM-dd');
-                else if (/^\d?\d-\w\w\w-\d\d\d\d$/g.test(iDate))
+                else if (/^\d?\d-\w\w\w-\d\d\d\d$/.test(iDate))
                     return utility.Date.parse(iDate, 'd-MMM-yyyy');
-                else if (/^\d?\d-\w\w\w-\d\d$/g.test(iDate)) {
+                else if (/^\d?\d-\w\w\w-\d\d$/.test(iDate)) {
                     return utility.Date.parse(iDate, 'd-MMM-yy');
                 }
                 else
@@ -256,16 +314,14 @@ function extractReport(reportConfig: m.ModelPullReportInfo, reportInputParams: M
 
                     //loop through each field and extract value
                     for (const prop of targetConfigFields) {
-                        let tagName = prop.identifier;
+                        let tagName = prop.name.toUpperCase();
                         let datatype = prop.datatype;
                         let fieldName = prop.name;
 
                         let value: any = undefined;
                         let _value = targetObjRows[r][tagName];
                         if (_value) {
-                            if (datatype == 'array' && Array.isArray(prop.fields))
-                                value = processRows(targetObjRows[r][tagName], prop.fields); //recursive call to process nested array
-                            else if (datatype == 'number')
+                            if (datatype == 'number')
                                 value = parseNumber(_value);
                             else if (datatype == 'date')
                                 value = parseDate(_value);
@@ -287,9 +343,8 @@ function extractReport(reportConfig: m.ModelPullReportInfo, reportInputParams: M
                 return data;
             }
 
-            let tmplXML = fs.readFileSync(path.join(__dirname, `../pull/${reportConfig.name}.xml`), 'utf-8'); //load XML template
-            tmplXML = substituteTDLParameters(tmplXML, reportInputParams); //substitute angular bracket params with values
-            let respContent = await sendTally(tmplXML, reportInputParams);
+            let tmplXML = lstReportXml.get(reportConfig.name) || '';
+            let respContent = await sendTallyXml(tmplXML, reportInputParams);
 
             if (!respContent) {
                 retval.error = 'Empty data received from Tally';
@@ -299,7 +354,7 @@ function extractReport(reportConfig: m.ModelPullReportInfo, reportInputParams: M
                 let regErr = respContent.match(/<EXCEPTION>(.+)<\/EXCEPTION>/g);
                 let errorMessage = 'Unknown error';
                 if (regErr && regErr[0])
-                    errorMessage = regErr[0].substring(11, regErr[0].length - 23);
+                    errorMessage = regErr[0].substring(11, regErr[0].length - 12);
 
                 retval.error = errorMessage;
                 return;
@@ -307,33 +362,17 @@ function extractReport(reportConfig: m.ModelPullReportInfo, reportInputParams: M
 
             let xmlParser = new XMLParser({
                 parseTagValue: false,
-                isArray(tagName, jPath, isLeafNode, isAttribute) {
+                isArray(tagName) {
                     return (tagName == 'ROW' || tagName.endsWith('.LIST'))
                 },
             });
             let resultObj = xmlParser.parse(respContent);
 
-            //process response based on the type of output
-            if (reportConfig.output.datatype == 'array' && reportConfig.output.fields) {
-
-                let data: any[] = processRows(resultObj['DATA']['ROW'], reportConfig.output.fields);
-                retval.data = data;
-            }
-            else {
-                if (resultObj['DATA'] && resultObj['DATA']['ROW'] && !resultObj['DATA']['ROW']['VALUE']) {
-                    let _value: string = resultObj['DATA']['ROW'][0]['VALUE'];
-                    if (reportConfig.output.datatype == 'number')
-                        retval.data = parseNumber(_value);
-                    else if (reportConfig.output.datatype == 'boolean')
-                        retval.data = _value == '1'
-                    else if (reportConfig.output.datatype == 'date')
-                        retval.data = parseDate(_value);
-                    else
-                        retval.data = parseString(_value);
-                }
-            }
+            let data: any[] = processRows(resultObj['DATA']['ROW'], reportConfig.output);
+            retval.data = data;
 
         } catch (err) {
+            throw err;
         } finally {
             resolve(retval);
         }

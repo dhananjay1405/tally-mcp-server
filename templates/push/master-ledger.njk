@@ -1,0 +1,64 @@
+<ENVELOPE>
+    <HEADER>
+        <TALLYREQUEST>Import Data</TALLYREQUEST>
+    </HEADER>
+    <BODY>
+        <IMPORTDATA>
+            <REQUESTDESC>
+                <REPORTNAME>All Masters</REPORTNAME>
+                <STATICVARIABLES>
+                    {% if targetCompany %}
+                    <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
+                    {% endif %}
+                </STATICVARIABLES>
+            </REQUESTDESC>
+            <REQUESTDATA>
+                {% for master in masters %}
+                <TALLYMESSAGE>
+                    <LEDGER NAME="{{ master._name or master.name | escape }}" ACTION="Create">
+                        <LANGUAGENAME.LIST>
+                            <NAME.LIST>
+                                <NAME>{{ master.name | escape }}</NAME>
+                            </NAME.LIST>
+                        </LANGUAGENAME.LIST>
+                        {% if master.parent %}
+                        <PARENT>{{ master.parent | escape }}</PARENT>
+                        {% endif %}
+                        {% if master.openingBalance != undefined %}
+                        <OPENINGBALANCE>{{ master.openingBalance }}</OPENINGBALANCE>
+                        {% endif %}
+                        {% if master.isBillWise != undefined %}
+                        <ISBILLWISEON>{{"Yes" if master.isBillWise else "No" }}</ISBILLWISEON>
+                        {% if master.billCreditPeriod != undefined %}
+                        <BILLCREDITPERIOD>{{ master.billCreditPeriod }} Days</BILLCREDITPERIOD>
+                        {% endif %}
+                        {% endif %}
+                        {% if master.mailingDetails %}
+                        <LEDMAILINGDETAILS.LIST>
+                            <APPLICABLEFROM>{{ master.mailingDetails.applicableFrom | formatDate("yyyyMMdd") }}</APPLICABLEFROM>
+                            {% if master.mailingDetails.name != undefined %}
+                            <MAILINGNAME>{{ master.mailingDetails.name | escape }}</MAILINGNAME>
+                            {% endif %}
+                            <COUNTRY>{{ master.mailingDetails.country | escape }}</COUNTRY>
+                            <STATE>{{ master.mailingDetails.state | escape }}</STATE>
+                            {% if master.mailingDetails.pincode != undefined %}
+                            <PINCODE>{{ master.mailingDetails.pincode | escape }}</PINCODE>
+                            {% endif %}
+                        </LEDMAILINGDETAILS.LIST>
+                        {% if master.gstRegistrationDetails %}
+                        <LEDGSTREGDETAILS.LIST>
+                            <APPLICABLEFROM>{{ master.gstRegistrationDetails.applicableFrom | formatDate("yyyyMMdd") }}</APPLICABLEFROM>
+                            <GSTREGISTRATIONTYPE>{{ master.gstRegistrationDetails.registrationType | escape }}</GSTREGISTRATIONTYPE>
+                            {% if master.gstRegistrationDetails.placeOfSupply != undefined %}
+                            <PLACEOFSUPPLY>{{ master.gstRegistrationDetails.placeOfSupply | escape }}</PLACEOFSUPPLY>
+                            {% endif %}
+                            <GSTIN>{{ master.gstRegistrationDetails.gstin | escape }}</GSTIN>
+                        </LEDGSTREGDETAILS.LIST>
+                        {% endif %}
+                    </LEDGER>
+                </TALLYMESSAGE>
+                {% endfor %}
+            </REQUESTDATA>
+        </IMPORTDATA>
+    </BODY>
+</ENVELOPE>

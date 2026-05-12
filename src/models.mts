@@ -1,8 +1,6 @@
 export interface ModelPullReportOutputFieldInfo {
-    identifier: string;
     name: string;
     datatype: string;
-    fields?: ModelPullReportOutputFieldInfo[];
 }
 
 export interface ModelPullReportInputInfo {
@@ -10,11 +8,6 @@ export interface ModelPullReportInputInfo {
     datatype: string;
     validation_regex?: string;
     validation_message?: string;
-}
-
-export interface ModelPullReportOutputInfo {
-    datatype: string;
-    fields?: ModelPullReportOutputFieldInfo[];
 }
 
 export interface ModelPullResponse {
@@ -25,5 +18,48 @@ export interface ModelPullResponse {
 export interface ModelPullReportInfo {
     name: string;
     input: ModelPullReportInputInfo[];
-    output: ModelPullReportOutputInfo;
+    output: ModelPullReportOutputFieldInfo[];
+}
+
+export interface TallyStaticVariable {
+    name: string;
+    value: string;
+}
+
+export interface TallyFieldDefinition {
+    name: string;
+    datatype: string;
+    expression?: string;
+    description?: string;
+}
+
+export interface TallyFilterDefinition {
+    name: string;
+    expression: string;
+}
+
+export interface TallyCollectionDefinition {
+    collection: string;
+    description?: string;
+    fields: TallyFieldDefinition[];
+}
+
+export interface TallyActionVariableDefinition {
+    name: string;
+    value: string;
+}
+
+export interface TallyActionDefinition {
+    targetReport: string;
+    variables: TallyActionVariableDefinition[];
+}
+
+export interface CreateUpdateDeleteStatus {
+    created?: number;
+    altered?: number;
+    deleted?: number;
+    combined?: number;
+    ignored?: number;
+    cancelled?: number;
+    exceptions?: number;
 }
