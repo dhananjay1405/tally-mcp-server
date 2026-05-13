@@ -30,13 +30,17 @@
                         <SCROLLED>Vertical</SCROLLED>
                     </PART>
                     <LINE NAME="MyLine01">
-                        <FIELDS>FldDate,FldVoucherType,FldVoucherNumber,FldPartyLedger,FldAmount,FldNarration</FIELDS>
+                        <FIELDS>FldGuid,FldDate,FldVoucherType,FldVoucherNumber,FldAlternateLedger,FldPartyLedger,FldAmount,FldNarration</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <LINE NAME="MyLineOp">
-                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldVoucherNumberOp,FldPartyLedgerOp,FldAmountOp,FldNarrationOp</FIELDS>
+                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldAmountOp</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
+                    <FIELD NAME="FldGuid">
+                        <SET>$Guid</SET>
+                        <XMLTAG>guid</XMLTAG>
+                    </FIELD>
                     <FIELD NAME="FldDate">
                         <SET>$Date</SET>
                         <XMLTAG>date</XMLTAG>
@@ -48,6 +52,10 @@
                     <FIELD NAME="FldVoucherNumber">
                         <SET>$VoucherNumber</SET>
                         <XMLTAG>voucher_number</XMLTAG>
+                    </FIELD>
+                    <FIELD NAME="FldAlternateLedger">
+                        <SET>$AllLedgerEntries[1,@@FilterNotLedgerEqual].LedgerName</SET>
+                        <XMLTAG>alternate_ledger</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldPartyLedger">
                         <SET>$PartyLedgerName</SET>
@@ -69,21 +77,9 @@
                         <SET>"Opening"</SET>
                         <XMLTAG>voucher_type</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="FldVoucherNumberOp">
-                        <SET>""</SET>
-                        <XMLTAG>voucher_number</XMLTAG>
-                    </FIELD>
-                    <FIELD NAME="FldPartyLedgerOp">
-                        <SET>""</SET>
-                        <XMLTAG>party_ledger</XMLTAG>
-                    </FIELD>
                     <FIELD NAME="FldAmountOp">
                         <SET>if $$IsDebit:$OpeningBalance:Ledger:"{{ ledgerName }}" then -$$NumValue:$OpeningBalance:Ledger:"{{ ledgerName }}" else $$NumValue:$OpeningBalance:Ledger:"{{ ledgerName }}"</SET>
                         <XMLTAG>amount</XMLTAG>
-                    </FIELD>
-                    <FIELD NAME="FldNarrationOp">
-                        <SET>""</SET>
-                        <XMLTAG>narration</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
                         <TYPE>Voucher</TYPE>
@@ -91,7 +87,8 @@
                         <FILTER>FilterLedger,FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
                     <SYSTEM TYPE="Formulae" NAME="FilterLedger">NOT $$IsEmpty:$AllLedgerEntries[1,@@FilterLedgerEqual].LedgerName</SYSTEM>
-                    <SYSTEM TYPE="Formulae" NAME="FilterLedgerEqual">$LedgerName = "{{ ledgerName }}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterLedgerEqual">$$IsEqual:$LedgerName:"{{ ledgerName }}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterNotLedgerEqual">NOT $$IsEqual:$LedgerName:"{{ ledgerName }}"</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeInventoryVch">NOT $$IsInventoryVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>

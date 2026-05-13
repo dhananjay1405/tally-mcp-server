@@ -320,7 +320,7 @@ function extractReport(reportConfig: m.ModelPullReportInfo, reportInputParams: M
 
                         let value: any = undefined;
                         let _value = targetObjRows[r][tagName];
-                        if (_value) {
+                        if (_value !== undefined) {
                             if (datatype == 'number')
                                 value = parseNumber(_value);
                             else if (datatype == 'date')

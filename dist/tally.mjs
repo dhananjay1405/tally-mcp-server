@@ -276,7 +276,7 @@ function extractReport(reportConfig, reportInputParams) {
                         let fieldName = prop.name;
                         let value = undefined;
                         let _value = targetObjRows[r][tagName];
-                        if (_value) {
+                        if (_value !== undefined) {
                             if (datatype == 'number')
                                 value = parseNumber(_value);
                             else if (datatype == 'date')

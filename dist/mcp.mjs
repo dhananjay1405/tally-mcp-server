@@ -185,7 +185,7 @@ export async function registerMcpServer() {
             }
             let lstFilters = new Map();
             if (args.containsFilter) {
-                lstFilters.set('Search_Contains', `$Name CONTAINS "${args.containsFilter}"`);
+                lstFilters.set('Search_Contains', `$Name CONTAINS "${args.containsFilter.replace(/"/g, '')}"`); //ensure to strip double quotes from filter value to avoid TDL syntax error
             }
             let result = await queryCollection(targetCollection, ['Name'], lstFilters, args.targetCompany);
             return {
@@ -201,7 +201,7 @@ export async function registerMcpServer() {
     });
     mcpServer.registerTool('chart-of-accounts', {
         title: 'Chart of Accounts',
-        description: `fetches chart of accounts or group structure / GL hierarchywith fields group_name, group_parent, bs_pl, dr_cr, affects_gross_profit, sort_position. the column bs_pl will have values false = Balance Sheet / true = Profit Loss. Column dr_cr as value true = Debit / false = Credit. columns group and parent are tree structure represented in flat format. The column affects_gross_profit has values true / false, it is used to determine if ledger under this group will affect gross profit or not. sort_position determines position or placement order with respect to items of same level for display, returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis`,
+        description: `fetches chart of accounts or GL hierarchy with fields ledger_name, group_name, primary_group, bs_pl, dr_cr, affects_gross_profit, sort_position. the column bs_pl will have values false = Balance Sheet / true = Profit Loss. Column dr_cr as value true = Debit / false = Credit. primary_group is the primary group of parent or group, under which ledger is nested. The columns group and parent are tree structure represented in flat format. The column affects_gross_profit has values true / false, it is used to determine if ledger under this group will affect gross profit or not. sort_position determines position or placement order with respect to items of same level for display, returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis`,
         inputSchema: {
             targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
         },
@@ -211,9 +211,9 @@ export async function registerMcpServer() {
         }
     }, async (args) => {
         try {
-            let result = await queryCollection('Group', ['Name', 'Parent', 'IsRevenue', 'IsDeemedPositive', 'AffectsGrossProfit', 'SortPosition'], new Map(), args.targetCompany);
-            result = renameObjectArrayProperties(result, new Map([['Name', 'group_name'], ['Parent', 'group_parent'], ['IsRevenue', 'bs_pl'], ['IsDeemedPositive', 'dr_cr'], ['AffectsGrossProfit', 'affects_gross_profit'], ['SortPosition', 'sort_position']]));
-            let tableID = await cacheTable(new Map([['group_name', 'string'], ['group_parent', 'string'], ['bs_pl', 'boolean'], ['dr_cr', 'boolean'], ['affects_gross_profit', 'boolean'], ['sort_position', 'number']]), result);
+            let result = await queryCollection('Ledger', ['Name', 'Parent', '_PrimaryGroup', 'IsRevenue', 'IsDeemedPositive', 'AffectsGrossProfit', 'SortPosition'], new Map(), args.targetCompany);
+            result = renameObjectArrayProperties(result, new Map([['Name', 'ledger_name'], ['Parent', 'group_name'], ['_PrimaryGroup', 'primary_group'], ['IsRevenue', 'bs_pl'], ['IsDeemedPositive', 'dr_cr'], ['AffectsGrossProfit', 'affects_gross_profit'], ['SortPosition', 'sort_position']]));
+            let tableID = await cacheTable(new Map([['ledger_name', 'string'], ['group_name', 'string'], ['primary_group', 'string'], ['bs_pl', 'boolean'], ['dr_cr', 'boolean'], ['affects_gross_profit', 'boolean'], ['sort_position', 'number']]), result);
             return {
                 content: [{ type: 'text', text: JSON.stringify({ tableID }) }]
             };
@@ -370,7 +370,7 @@ export async function registerMcpServer() {
         try {
             let lstFilters = new Map();
             if (args.stockGroup) {
-                lstFilters.set('Specific_StockGroup', `$$IsEqual:$Parent:"${args.stockGroup}"`);
+                lstFilters.set('Specific_StockGroup', `$$IsEqual:$Parent:"${args.stockGroup.replace(/"/g, '""')}"`);
             }
             let result = await queryCollection('StockItem', ['Name', 'Parent', 'OpeningBalance', 'OpeningValue', 'InwardQuantity', 'InwardValue', 'OutwardQuantity', 'OutwardValue', 'ClosingBalance', 'ClosingValue', 'AffectsGrossProfit', 'SortPosition'], lstFilters, args.targetCompany, new Date(args.fromDate), new Date(args.toDate));
             result = renameObjectArrayProperties(result, new Map([['Name', 'stock_item_name'], ['Parent', 'stock_group_name'], ['OpeningBalance', 'opening_quantity'], ['OpeningValue', 'opening_value'], ['InwardQuantity', 'inward_quantity'], ['InwardValue', 'inward_value'], ['OutwardQuantity', 'outward_quantity'], ['OutwardValue', 'outward_value'], ['ClosingBalance', 'closing_quantity'], ['ClosingValue', 'closing_value']]));
@@ -400,7 +400,7 @@ export async function registerMcpServer() {
         }
     }, async (args) => {
         try {
-            let lstFilters = new Map([['Exact_Ledger', `$$IsEqual:$Name:"${args.ledgerName}"`]]);
+            let lstFilters = new Map([['Exact_Ledger', `$$IsEqual:$Name:"${args.ledgerName.replace(/"/g, '""')}"`]]);
             let result = await queryCollection('Ledger', ['ClosingBalance'], lstFilters, args.targetCompany, undefined, new Date(args.toDate));
             if (result.length > 0) {
                 return { content: [{ type: 'text', text: JSON.stringify({ amount: result[0].ClosingBalance }) }] };
@@ -430,7 +430,7 @@ export async function registerMcpServer() {
         }
     }, async (args) => {
         try {
-            let lstFilters = new Map([['Exact_StockItem', `$$IsEqual:$Name:"${args.itemName}"`]]);
+            let lstFilters = new Map([['Exact_StockItem', `$$IsEqual:$Name:"${args.itemName.replace(/"/g, '""')}"`]]);
             let result = await queryCollection('StockItem', ['ClosingBalance', 'Unit'], lstFilters, args.targetCompany, undefined, new Date(args.toDate));
             return {
                 content: [{ type: 'text', text: JSON.stringify(result.length ? { quantity: result[0].ClosingBalance, unit_of_measurement: result[0].Unit } : '') }]
@@ -477,7 +477,7 @@ export async function registerMcpServer() {
     });
     mcpServer.registerTool('ledger-account', {
         title: 'Ledger Account',
-        description: `fetches GL ledger account statement with voucher level details containing fields date, voucher_type, voucher_number, party_name, amount, narration . amount = debit is negative and credit is positive. party_name = ledger_name. returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis`,
+        description: `fetches GL ledger account statement with voucher level details containing fields guid, date, voucher_type, voucher_number, alternate_ledger, party_name, amount, narration . amount = debit is negative and credit is positive. alternate_ledger = if amount is credit then ledger by which it is debited and vice-a-versa (in case of multiple ledgers first one is displayed). returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis`,
         inputSchema: {
             targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
             ledgerName: z.string().describe('ledger name, always verify if ledger exists using list-master tool with collection as ledger'),
@@ -494,7 +494,7 @@ export async function registerMcpServer() {
             inputParams.set('targetCompany', args.targetCompany);
         }
         // verify if ledger exists before making report call to avoid unnecessary processing and load on Tally
-        let lstLedger = await queryCollection('Ledger', ['Name'], new Map([['Exact_Ledger', `$$IsEqual:$Name:"${args.ledgerName}"`]]), args.targetCompany);
+        let lstLedger = await queryCollection('Ledger', ['Name'], new Map([['Exact_Ledger', `$$IsEqual:$Name:"${args.ledgerName.replace(/"/g, '""')}"`]]), args.targetCompany);
         if (lstLedger.length === 0) {
             return {
                 isError: true,
@@ -514,7 +514,7 @@ export async function registerMcpServer() {
                 const lastItem = resp.data.pop();
                 resp.data.unshift(lastItem);
             }
-            const tableId = await cacheTable(new Map([['date', 'date'], ['voucher_type', 'string'], ['voucher_number', 'string'], ['party_name', 'string'], ['amount', 'number'], ['narration', 'string']]), resp.data);
+            const tableId = await cacheTable(new Map([['guid', 'string'], ['date', 'date'], ['voucher_type', 'string'], ['voucher_number', 'string'], ['alternate_ledger', 'string'], ['party_name', 'string'], ['amount', 'number'], ['narration', 'string']]), resp.data);
             return {
                 content: [{ type: 'text', text: JSON.stringify({ tableID: tableId }) }]
             };
@@ -539,7 +539,7 @@ export async function registerMcpServer() {
             inputParams.set('targetCompany', args.targetCompany);
         }
         // verify if stock item exists before making report call to avoid unnecessary processing and load on Tally
-        let lstStockItem = await queryCollection('StockItem', ['Name'], new Map([['Exact_StockItem', `$$IsEqual:$Name:"${args.itemName}"`]]), args.targetCompany);
+        let lstStockItem = await queryCollection('StockItem', ['Name'], new Map([['Exact_StockItem', `$$IsEqual:$Name:"${args.itemName.replace(/"/g, '""')}"`]]), args.targetCompany);
         if (lstStockItem.length === 0) {
             return {
                 isError: true,

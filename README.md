@@ -18,9 +18,9 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v7.zip](https://excelkida.com/resource/tally-mcp-server-v7.zip)
+[https://excelkida.com/resource/tally-mcp-server-v7.1.zip](https://excelkida.com/resource/tally-mcp-server-v7.1.zip)
 
-Last updated: version **7.0** [12-May-2026]
+Last updated: version **7.1** [13-May-2026]
 
 Refer docs/CHANGELOG.md for details
 
@@ -169,8 +169,9 @@ Extracts Chart of Accounts (or Group hierarchy) useful for preparing Balance She
 
 **Output**
 JSON: `{ "tableID": "..." }` with columns:
+1. `ledger_name`
 1. `group_name`
-1. `group_parent`
+1. `primary_group`
 1. `bs_pl` (boolean) [**true** = Profit &amp; Loss  / **false** = Balance Sheet]
 1. `dr_cr` (boolean) [**true** = Debit / **false** = Credit]
 1. `affects_gross_profit` (boolean) [**true** = Affects Gross Profit / **false** = Does not affect Gross Profit]
@@ -309,9 +310,11 @@ Fetches ledger account statement for period.
 
 **Output**
 JSON: `{ "tableID": "..." }` with columns:
+1. `guid`
 1. `date`
 1. `voucher_type`
 1. `voucher_number`
+1. `alternate_ledger`
 1. `party_name`
 1. `amount` (number) [**negative** = Debit / **positive** = Credit]
 1. `narration`

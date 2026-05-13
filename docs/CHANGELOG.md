@@ -1,5 +1,13 @@
 # Release History
 
+### Version: v7.1 [13-May-2026]
+
+Fixed:
+* Internal TDL syntax in XML request were breaking when double quote was specified in input for tools, which is now escaped properly
+* Faulty handling for 0 and blank string is fixed
+* In v7 tool chart-of-accounts was modified to extract only group, due to which response cycle was getting longer consuming more tokens. This behavious is reverted back to orginal
+* In tool **ledger-account** field displaying alternate ledger is introduced, since party name field is found empty for journal type vouchers
+
 ### Version: v7 [12-May-2026]
 
 Added:

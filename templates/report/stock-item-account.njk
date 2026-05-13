@@ -34,7 +34,7 @@
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <LINE NAME="MyLineOp">
-                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldVoucherNumberOp,FldPartyLedgerOp,FldQuantityOp,FldAmountOp,FldNarrationOp,FldTrackingNumberOp,FldVoucherTypeParentOp</FIELDS>
+                        <FIELDS>FldDateOp,FldVoucherTypeOp,FldQuantityOp,FldAmountOp,FldVoucherTypeParentOp</FIELDS>
                         <XMLTAG>ROW</XMLTAG>
                     </LINE>
                     <FIELD NAME="FldDate">
@@ -81,14 +81,6 @@
                         <SET>"Opening"</SET>
                         <XMLTAG>voucher_type</XMLTAG>
                     </FIELD>
-                    <FIELD NAME="FldVoucherNumberOp">
-                        <SET>""</SET>
-                        <XMLTAG>voucher_number</XMLTAG>
-                    </FIELD>
-                    <FIELD NAME="FldPartyLedgerOp">
-                        <SET>""</SET>
-                        <XMLTAG>party_ledger</XMLTAG>
-                    </FIELD>
                     <FIELD NAME="FldQuantityOp">
                         <SET>if $$IsInwards:$OpeningBalance:StockItem:"{{ itemName }}" then $$NumValue:$OpeningBalance:StockItem:"{{ itemName }}" else -$$NumValue:$OpeningBalance:StockItem:"{{ itemName }}"</SET>
                         <XMLTAG>quantity</XMLTAG>
@@ -96,14 +88,6 @@
                     <FIELD NAME="FldAmountOp">
                         <SET>if $$IsDebit:$OpeningValue:StockItem:"{{ itemName }}" then -$$NumValue:$OpeningValue:StockItem:"{{ itemName }}" else $$NumValue:$OpeningValue:StockItem:"{{ itemName }}"</SET>
                         <XMLTAG>amount</XMLTAG>
-                    </FIELD>
-                    <FIELD NAME="FldNarrationOp">
-                        <SET>""</SET>
-                        <XMLTAG>narration</XMLTAG>
-                    </FIELD>
-                    <FIELD NAME="FldTrackingNumberOp">
-                        <SET>""</SET>
-                        <XMLTAG>tracking_number</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldVoucherTypeParentOp">
                         <SET>"Opening"</SET>
@@ -115,7 +99,7 @@
                         <FILTER>FilterStockItem,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
                     <SYSTEM TYPE="Formulae" NAME="FilterStockItem">NOT $$IsEmpty:$AllInventoryEntries[1,@@FilterItemEqual].StockItemName</SYSTEM>
-                    <SYSTEM TYPE="Formulae" NAME="FilterItemEqual">$StockItemName = "{{ itemName }}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterItemEqual">$$IsEqual:$StockItemName:"{{ itemName }}"</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterInventoryVch">$$IsInventoryVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>
