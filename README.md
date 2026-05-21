@@ -18,9 +18,12 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v7.1.zip](https://excelkida.com/resource/tally-mcp-server-v7.1.zip)
+[https://excelkida.com/resource/tally-mcp-server-v7.2.zip](https://excelkida.com/resource/tally-mcp-server-v7.2.zip)
 
-Last updated: version **7.1** [13-May-2026]
+One-click installer **extension** for **Claude Desktop**<br>
+[https://excelkida.com/resource/tally-mcp-server-v7.2.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.2.mcpb)
+
+Last updated: version **7.2** [21-May-2026]
 
 Refer docs/CHANGELOG.md for details
 
@@ -48,6 +51,28 @@ A sample setup for few popular tools is demonstrated.
 ### Claude Desktop
 Desktop version of Claude AI supports loading of local MCP server. Ensure you have Pro / Team / Max / Enterprise subscription of Claude, which supports higher limit compared to Free. MCP makes multiple calls to Tally for validation and inference, which might exhaust free limits quickly. Download Claude Desktop from following link
 [claude.ai/download](https://claude.ai/download)
+
+#### One-click installation (via Extension)
+
+Go to menu &gt; File &gt; Settings
+
+<image src="https://excelkida.com/image/github/claude-desktop-settings-menu.png" height="185" width="335">
+
+Extensions &gt; Advance Settings
+
+<image src="https://excelkida.com/image/github/claude-desktop-settings-extension.png" height="553" width="928">
+
+Click on install extension button
+
+<image src="https://excelkida.com/image/github/claude-desktop-extension-page.png" height="619" width="868">
+
+Browse the extension file (with file extension mcpb) download at the start
+
+<image src="https://excelkida.com/image/github/claude-desktop-extension-install.png" height="843" width="696">
+
+A dialog window will appear asking *Do you want to install Tally Prime?* click **Install** button, which would install the Tally MCP Server
+
+#### Installation via Config file (via Developer menu)
 
 Go to menu &gt; File &gt; Settings &gt; Developer
 

@@ -1,5 +1,10 @@
 # Release History
 
+### Version: v7.2 [13-May-2026]
+
+Added:
+* Bundled version of Tally MCP Server for Claude Desktop i.e. Extension, for one-click installation
+
 ### Version: v7.1 [13-May-2026]
 
 Fixed:

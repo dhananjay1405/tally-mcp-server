@@ -1,0 +1,116 @@
+{
+  "manifest_version": "0.3",
+  "name": "tally-mcp-server",
+  "display_name": "Tally Prime",
+  "version": "7.2.0",
+  "description": "Expose Tally Prime ERP data to MCP-compatible clients like Claude Desktop.",
+  "author": {
+    "name": "Dhananjay Gokhale",
+    "email": "info@excelkida.com",
+    "url": "https://github.com/dhananjay1405"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dhananjay1405/tally-mcp-server.git"
+  },
+  "homepage": "https://github.com/dhananjay1405/tally-mcp-server#readme",
+  "support": "https://github.com/dhananjay1405/tally-mcp-server#readme",
+  "license": "ISC",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/index.mjs"
+      ],
+      "env": {}
+    }
+  },
+  "tools": [
+    {
+      "name": "metadata-collection",
+      "description": "returns collections metadata with collection and description"
+    },
+    {
+      "name": "metadata-fields",
+      "description": "returns fields metadata for the selected tally collection containing field name, optional description and data type which can be string, number, date or boolean"
+    },
+    {
+      "name": "query-option-values",
+      "description": "returns predefined option values or drop-down values for the fields required for master and voucher creation, it returns back object array of pre-defined values"
+    },
+    {
+      "name": "query-database",
+      "description": "executes sql query on pglite postgres in-memory database for querying cached Tally Prime report data in table generated as output by other tools (in tableID property from tool output response). These tables are temporary and will be dropped after 15 minutes automatically. Use this tool to run complex analytical queries to aggregate, filter, sort results"
+    },
+    {
+      "name": "query-collection",
+      "description": "queries a Tally Prime collection with selected fields and optional context like target company and reporting period. result is cached in pglite postgres in-memory table and returned as tableID. Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "list-master",
+      "description": "fetches list of masters from Tally Prime collection e.g. group, ledger, vouchertype, unit, godown, stockgroup, stockitem, costcategory, costcentre, attendancetype, company, currency, gstin, gstclassification returns output in JSON string array in the property list"
+    },
+    {
+      "name": "chart-of-accounts",
+      "description": "fetches chart of accounts or GL hierarchy with fields ledger_name, group_name, primary_group, bs_pl, dr_cr, affects_gross_profit, sort_position. the column bs_pl will have values false = Balance Sheet / true = Profit Loss. Column dr_cr as value true = Debit / false = Credit. primary_group is the primary group of parent or group, under which ledger is nested. The columns group and parent are tree structure represented in flat format. The column affects_gross_profit has values true / false, it is used to determine if ledger under this group will affect gross profit or not. sort_position determines position or placement order with respect to items of same level for display, returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "trial-balance",
+      "description": "fetches trial balance with fields ledger_name, group_name (blank if Profit & Loss), opening_balance, net_debit, net_credit, closing_balance. opening_balance and closing_balance negative is debit and positive is credit. kindly fetch data from chart-of-accounts tool to pull group hierarchy before calling this tool. returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "profit-loss",
+      "description": "fetches profit and loss statement with fields like ledger_name, group_name, closing_balance. closing_balance negative is debit or expense and positive is credit or income. closing stock to be treated as credit, kindly fetch data from chart-of-accounts tool to pull group hierarchy before calling this tool. for detailed ledger level analysis call trial-balance tool, returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "balance-sheet",
+      "description": "fetches balance sheet with fields like ledger_name, group_name (blank if Profit & Loss A/c), closing_balance. closing balance negative is debit or asset and positive is credit or liability. kindly fetch data from chart-of-accounts tool to pull group hierarchy before calling this tool. returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "stock-summary",
+      "description": "fetches stock item summary with fields stock_item_name, stock_group_name, opening_quantity, opening_value, inward_quantity, inward_value, outward_quantity, outward_value, closing_quantity, closing_value, returns output cached in pglite postgres in-memory table (specified in tableID property). synonyms (name=stock item / parent=stock group) Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "ledger-balance",
+      "description": "fetches ledger closing balance as on date, negative is debit and positive is credit, display Dr for Debit or Cr for Credit after the amount for better readability, instead of negative amount flip Debit or Credit to make it positive"
+    },
+    {
+      "name": "stock-item-balance",
+      "description": "fetches stock item remaining quantity balance as on date, tool returns quantity and unit of measurement"
+    },
+    {
+      "name": "bills-outstanding",
+      "description": "fetches pending overdue outstanding bills receivable or payable as on date with fields bill_date,reference_number,outstanding_amount,party_name,overdue_days. outstanding_amount = Debit is negative and Credit is positive. party_name = ledger_name. returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "ledger-account",
+      "description": "fetches GL ledger account statement with voucher level details containing fields guid, date, voucher_type, voucher_number, alternate_ledger, party_name, amount, narration . amount = debit is negative and credit is positive. alternate_ledger = if amount is credit then ledger by which it is debited and vice-a-versa (in case of multiple ledgers first one is displayed). returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "stock-item-account",
+      "description": "fetches GL stock item account statement with voucher level details containing fields date, voucher_type, voucher_number, party_name, quantity, amount, narration, tracking_number, voucher_category. party_name = ledger_name. quantity = inward as positive and outward as negative. amount = debit is negative and credit is positive, narration = notes / remarks. for calculating closing balance of quantity, consider rows with tracking_number as empty as it is, but for rows with tracking_number having text value, then duplicate rows need to be removed by preparing intermediate output with aggregation of tracking_number and voucher_category with sum of quantity and then comparing quantity of Receipt Note with Purchase and Delivery Note with Sales to identify and remove the rows with Receipt Note and Delivery Note if they are found to be tracked fully / partially . returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis"
+    },
+    {
+      "name": "ledger-create-update",
+      "description": "create or update ledger master data in Tally Prime, returns success count of created and / or altered records"
+    },
+    {
+      "name": "set-company",
+      "description": "sets the active company context in Tally Prime. This changes the global company context used by Tally for subsequent operations and report queries"
+    },
+    {
+      "name": "set-period",
+      "description": "sets the active reporting period in Tally Prime by specifying a from date and to date. This changes the global period context used by Tally for subsequent report queries"
+    }
+  ],
+  "tools_generated": false,
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ]
+  }
+}
