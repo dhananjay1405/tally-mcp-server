@@ -168,43 +168,61 @@ export async function registerMcpServer(): Promise<McpServer> {
       }
     },
     async (args) => {
-      const collection = args.collection.trim();
+      try {
+        const collection = args.collection.trim();
 
-      const requestedFields = args.fields.map((field) => field.trim());
-      const targetCollectionFields = lstCollectionFields.filter(p => p.collection == args.collection).map(p => p.fields)[0];
-      const requestedFieldsMetadata = targetCollectionFields.filter(p => requestedFields.includes(p.name));
+        const requestedFields = args.fields.map((field) => field.trim());
+        const targetCollectionFields = lstCollectionFields.filter(p => p.collection == args.collection).map(p => p.fields)[0];
 
-      const fromDate = args.fromDate ? new Date(args.fromDate) : undefined;
-      const toDate = args.toDate ? new Date(args.toDate) : undefined;
-
-      const result = await queryCollection(
-        collection,
-        requestedFields,
-        new Map<string, string>(),
-        args.targetCompany,
-        fromDate,
-        toDate
-      );
-
-      // prepare Map of field name and data type for caching table metadata
-      let fieldMetadataMap = new Map<string, string>();
-      requestedFieldsMetadata.forEach((field) => {
-        if (field.datatype === 'amount' || field.datatype === 'quantity' || field.datatype === 'rate') {
-          fieldMetadataMap.set(field.name, 'number');
-        } else if (field.datatype === 'date') {
-          fieldMetadataMap.set(field.name, 'date');
-        } else if (field.datatype === 'boolean') {
-          fieldMetadataMap.set(field.name, 'boolean');
-        } else {
-          fieldMetadataMap.set(field.name, 'string');
+        // Validate that every requested field exists in the collection definition
+        const validFieldNames = targetCollectionFields.map(f => f.name);
+        const invalidFields = requestedFields.filter(f => !validFieldNames.includes(f));
+        if (invalidFields.length > 0) {
+          return {
+            isError: true,
+            content: [{ type: 'text', text: `The following fields do not exist in collection '${collection}': ${invalidFields.join(', ')}. Use metadata-fields resource to get valid field names.` }]
+          };
         }
-      });
 
-      const tableId = await cacheTable(fieldMetadataMap, result);
+        const requestedFieldsMetadata = targetCollectionFields.filter(p => requestedFields.includes(p.name));
 
-      return {
-        content: [{ type: 'text', text: JSON.stringify({ tableID: tableId }) }]
-      };
+        const fromDate = args.fromDate ? new Date(args.fromDate) : undefined;
+        const toDate = args.toDate ? new Date(args.toDate) : undefined;
+
+        const result = await queryCollection(
+          collection,
+          requestedFields,
+          new Map<string, string>(),
+          args.targetCompany,
+          fromDate,
+          toDate
+        );
+
+        // prepare Map of field name and data type for caching table metadata
+        let fieldMetadataMap = new Map<string, string>();
+        requestedFieldsMetadata.forEach((field) => {
+          if (field.datatype === 'amount' || field.datatype === 'quantity' || field.datatype === 'rate') {
+            fieldMetadataMap.set(field.name, 'number');
+          } else if (field.datatype === 'date') {
+            fieldMetadataMap.set(field.name, 'date');
+          } else if (field.datatype === 'boolean') {
+            fieldMetadataMap.set(field.name, 'boolean');
+          } else {
+            fieldMetadataMap.set(field.name, 'string');
+          }
+        });
+
+        const tableId = await cacheTable(fieldMetadataMap, result);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ tableID: tableId }) }]
+        };
+      } catch (err) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: JSON.stringify(err) }]
+        };
+      }
     }
   );
 
