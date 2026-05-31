@@ -1,5 +1,10 @@
 # Release History
 
+### Version: v7.3 [31-May-2026]
+
+Fixed:
+* Tool query-collection was crashing Tally instance when the all of the fields requested did not exists in Tally, due to which bad Tally XML request was being generated, which is fixed in https://github.com/dhananjay1405/tally-mcp-server/pull/20
+
 ### Version: v7.2 [13-May-2026]
 
 Added:

@@ -134,33 +134,50 @@ export async function registerMcpServer() {
             openWorldHint: false
         }
     }, async (args) => {
-        const collection = args.collection.trim();
-        const requestedFields = args.fields.map((field) => field.trim());
-        const targetCollectionFields = lstCollectionFields.filter(p => p.collection == args.collection).map(p => p.fields)[0];
-        const requestedFieldsMetadata = targetCollectionFields.filter(p => requestedFields.includes(p.name));
-        const fromDate = args.fromDate ? new Date(args.fromDate) : undefined;
-        const toDate = args.toDate ? new Date(args.toDate) : undefined;
-        const result = await queryCollection(collection, requestedFields, new Map(), args.targetCompany, fromDate, toDate);
-        // prepare Map of field name and data type for caching table metadata
-        let fieldMetadataMap = new Map();
-        requestedFieldsMetadata.forEach((field) => {
-            if (field.datatype === 'amount' || field.datatype === 'quantity' || field.datatype === 'rate') {
-                fieldMetadataMap.set(field.name, 'number');
+        try {
+            const collection = args.collection.trim();
+            const requestedFields = args.fields.map((field) => field.trim());
+            const targetCollectionFields = lstCollectionFields.filter(p => p.collection == args.collection).map(p => p.fields)[0];
+            // Validate that every requested field exists in the collection definition
+            const validFieldNames = targetCollectionFields.map(f => f.name);
+            const invalidFields = requestedFields.filter(f => !validFieldNames.includes(f));
+            if (invalidFields.length > 0) {
+                return {
+                    isError: true,
+                    content: [{ type: 'text', text: `The following fields do not exist in collection '${collection}': ${invalidFields.join(', ')}. Use metadata-fields resource to get valid field names.` }]
+                };
             }
-            else if (field.datatype === 'date') {
-                fieldMetadataMap.set(field.name, 'date');
-            }
-            else if (field.datatype === 'boolean') {
-                fieldMetadataMap.set(field.name, 'boolean');
-            }
-            else {
-                fieldMetadataMap.set(field.name, 'string');
-            }
-        });
-        const tableId = await cacheTable(fieldMetadataMap, result);
-        return {
-            content: [{ type: 'text', text: JSON.stringify({ tableID: tableId }) }]
-        };
+            const requestedFieldsMetadata = targetCollectionFields.filter(p => requestedFields.includes(p.name));
+            const fromDate = args.fromDate ? new Date(args.fromDate) : undefined;
+            const toDate = args.toDate ? new Date(args.toDate) : undefined;
+            const result = await queryCollection(collection, requestedFields, new Map(), args.targetCompany, fromDate, toDate);
+            // prepare Map of field name and data type for caching table metadata
+            let fieldMetadataMap = new Map();
+            requestedFieldsMetadata.forEach((field) => {
+                if (field.datatype === 'amount' || field.datatype === 'quantity' || field.datatype === 'rate') {
+                    fieldMetadataMap.set(field.name, 'number');
+                }
+                else if (field.datatype === 'date') {
+                    fieldMetadataMap.set(field.name, 'date');
+                }
+                else if (field.datatype === 'boolean') {
+                    fieldMetadataMap.set(field.name, 'boolean');
+                }
+                else {
+                    fieldMetadataMap.set(field.name, 'string');
+                }
+            });
+            const tableId = await cacheTable(fieldMetadataMap, result);
+            return {
+                content: [{ type: 'text', text: JSON.stringify({ tableID: tableId }) }]
+            };
+        }
+        catch (err) {
+            return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(err) }]
+            };
+        }
     });
     mcpServer.registerTool('list-master', {
         title: 'List Masters',
