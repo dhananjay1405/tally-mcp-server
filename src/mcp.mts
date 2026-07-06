@@ -585,7 +585,7 @@ export async function registerMcpServer(): Promise<McpServer> {
     'ledger-account',
     {
       title: 'Ledger Account',
-      description: `fetches GL ledger account statement with voucher level details containing fields guid, date, voucher_type, voucher_number, alternate_ledger, party_name, amount, narration . amount = debit is negative and credit is positive. alternate_ledger = if amount is credit then ledger by which it is debited and vice-a-versa (in case of multiple ledgers first one is displayed). returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis`,
+      description: `fetches GL ledger account statement with voucher level details containing fields guid, date, voucher_type, voucher_number, alternate_ledger, party_ledger, amount, narration . amount = debit is negative and credit is positive. alternate_ledger = if amount is credit then ledger by which it is debited and vice-a-versa (in case of multiple ledgers first one is displayed). returns output cached in pglite postgres in-memory table (specified in tableID property). Use query-database tool to run SQL queries against that table for further analysis`,
       inputSchema: {
         targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
         ledgerName: z.string().describe('ledger name, always verify if ledger exists using list-master tool with collection as ledger'),
@@ -627,7 +627,7 @@ export async function registerMcpServer(): Promise<McpServer> {
           const lastItem = resp.data.pop();
           resp.data.unshift(lastItem);
         }
-        const tableId = await cacheTable(new Map([['guid', 'string'], ['date', 'date'], ['voucher_type', 'string'], ['voucher_number', 'string'], ['alternate_ledger', 'string'], ['party_name', 'string'], ['amount', 'number'], ['narration', 'string']]), resp.data);
+        const tableId = await cacheTable(new Map([['guid', 'string'], ['date', 'date'], ['voucher_type', 'string'], ['voucher_number', 'string'], ['alternate_ledger', 'string'], ['party_ledger', 'string'], ['amount', 'number'], ['narration', 'string']]), resp.data);
         return {
           content: [{ type: 'text', text: JSON.stringify({ tableID: tableId }) }]
         };
