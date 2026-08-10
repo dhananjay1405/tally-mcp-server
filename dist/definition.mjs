@@ -88,7 +88,18 @@ export const lstCollectionFields = [
             { name: 'OpeningBalance', datatype: 'amount', description: 'opening or starting or begning balance based on from date' },
             { name: 'ClosingBalance', datatype: 'amount', description: 'closing or ending or balance based on to date' },
             { name: 'DebitTotals', datatype: 'amount', description: 'total debit amount of all vouchers passed during the period from and to date, negative denotes debit and vice-a-versa' },
-            { name: 'CreditTotals', datatype: 'amount', description: 'total credit amount of all vouchers passed during the period from and to date, positive denotes credit and vice-a-versa' }
+            { name: 'CreditTotals', datatype: 'amount', description: 'total credit amount of all vouchers passed during the period from and to date, positive denotes credit and vice-a-versa' },
+            { name: 'MailingName', datatype: 'string', description: 'name of the ledger for mailing or correspondence purpose' },
+            { name: 'MailingAddress', datatype: 'string', expression: 'if $$IsEmpty:$Address then "" else $$FullList:Address:$Address', description: 'address of the ledger for mailing or correspondence purpose' },
+            { name: 'LedStateName', datatype: 'string', description: 'state of the ledger for mailing or correspondence purpose' },
+            { name: 'CountryName', datatype: 'string', description: 'country of the ledger for mailing or correspondence purpose' },
+            { name: 'Pincode', datatype: 'string', description: 'postal code or ZIP code of the ledger for mailing or correspondence purpose' },
+            { name: 'Email', datatype: 'string', description: 'email address of the ledger for mailing or correspondence purpose' },
+            { name: 'MobileNumber', datatype: 'string', expression: 'if NOT $$IsEmpty:$LedgerMobile then $$Sprintf:"%s %s":$LedgerCountryISDCode:$LedgerMobile else ""', description: 'mobile number of the ledger for mailing or correspondence purpose' },
+            { name: 'GSTN', datatype: 'string', expression: 'if $$IsEmpty:$PartyGSTIN then $LedGSTRegDetails[Last].GSTIN else $PartyGSTIN', description: 'GST number of the party ledger' },
+            { name: 'GSTRegType', datatype: 'string', expression: 'if $$IsEmpty:$Gstregistrationtype then $LedGSTRegDetails[Last].Gstregistrationtype else $Gstregistrationtype', description: 'GST registration type of the party ledger' },
+            { name: 'GstTypeOfsupply', datatype: 'string', description: 'GST type of supply of the party ledger' },
+            { name: 'GstDutyHead', datatype: 'string', description: 'GST duty head of the party ledger' }
         ]
     },
     {
@@ -151,6 +162,12 @@ export const lstCollectionFields = [
             { name: 'OutwardQuantity', datatype: 'quantity', description: 'total outward quantity sales or purchase return or stock transfer during the period from and to date, it will be in negative which denotes outflow to be treated as positive and vice-a-versa' },
             { name: 'InwardValue', datatype: 'amount', description: 'total inward value of purchase or sales return or stock transfer during the period from and to date, negative denotes debit and positive credit' },
             { name: 'OutwardValue', datatype: 'amount', description: 'total outward value of sales or purchase return or stock transfer during the period from and to date, positive denotes credit and negative debit' },
+            { name: 'CostingMethod', datatype: 'string', description: 'method of valuation of stock which can be Avg. Cost (Average Cost), FIFO (First in First Out), Std. Cost (Standard Cost), At Zero Cost, Monthly Avg. Cost' },
+            { name: 'GSTMSTTypeofSupply', datatype: 'string', description: 'GST type of supply' },
+            { name: 'InfGSTHSNCode', datatype: 'string', description: 'GST HSN code' },
+            { name: 'InfGSTHSNDescription', datatype: 'string', description: 'GST HSN description' },
+            { name: 'InfGSTIGSTRate', datatype: 'number', description: 'GST IGST rate' },
+            { name: 'InfGSTTaxablility', datatype: 'string', description: 'GST taxability' }
         ]
     },
     {

@@ -18,12 +18,12 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v7.4.zip](https://excelkida.com/resource/tally-mcp-server-v7.4.zip)
+[https://excelkida.com/resource/tally-mcp-server-v7.5.zip](https://excelkida.com/resource/tally-mcp-server-v7.5.zip)
 
 One-click installer **extension** for **Claude Desktop**<br>
-[https://excelkida.com/resource/tally-mcp-server-v7.4.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.4.mcpb)
+[https://excelkida.com/resource/tally-mcp-server-v7.5.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.5.mcpb)
 
-Last updated: version **7.4** [03-Jul-2026]
+Last updated: version **7.5** [10-Aug-2026]
 
 Refer docs/CHANGELOG.md for details
 
@@ -34,6 +34,7 @@ Implementation was tested on below AI platform
 |--|--|--|
 |Claude AI| :heavy_check_mark: | :heavy_check_mark: |
 |ChatGPT|| :heavy_check_mark: |
+|Grok|| :heavy_check_mark: |
 
 
 ## Setup (Local)
@@ -429,6 +430,19 @@ Sets active reporting period context in Tally Prime.
 
 **Output**
 JSON string: `"OK"` on success.
+
+## Environment Variables
+
+End-users are free to hard-code few settings which needs to be applied
+
+|Variable|Description|
+|--|--|
+|TALLY_PORT|Port Number of XML Server of Tally (*optional*, default is **9000**)|
+|TALLY_HOST|Host name or IP where XML Server is running (*optional*, default is **localhost**)|
+|BLOCK_WRITE|Controls if MCP completely block access of write functionality. Setting this flag to value **1** will completely hide write functionality tools from the tool list. [ **0 = Allow , 1 = Block** ] (optional, default is **0** i.e. allowed). Not applicable for Claude Desktop (as it offers graphical switch to disable write functionality)|
+|PORT|Tally MCP Server port number. Applicable only if Tally Prime MCP Server is deployed as Remote MCP server (*optional*, default is **3000**). Not applicable for Claude Desktop|
+|MCP_DOMAIN|Domain name of Tally MCP Server website (*optional*, default is https://localhost:9000). Not applicable for Claude Desktop|
+|PASSWORD|Password for the OAuth Login front-end page to authenticate genuine user (kindly set this to some complex password default is **password**). Not applicable for Claude Desktop|
 
 ## Contact
 Project developed & maintained by: **Dhananjay Gokhale**

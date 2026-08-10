@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "tally-mcp-server",
   "display_name": "Tally Prime",
-  "version": "7.4.0",
+  "version": "7.5.0",
   "description": "Expose Tally Prime ERP data to MCP-compatible clients like Claude Desktop.",
   "author": {
     "name": "Dhananjay Gokhale",
@@ -24,7 +24,26 @@
       "args": [
         "${__dirname}/dist/index.mjs"
       ],
-      "env": {}
+      "env": {
+        "TALLY_PORT": "${user_config.TALLY_PORT}",
+        "TALLY_HOST": "${user_config.TALLY_HOST}"
+      }
+    }
+  },
+  "user_config": {
+    "TALLY_PORT": {
+      "type": "number",
+      "title": "Tally Port",
+      "description": "Port number for Tally XML server",
+      "required": false,
+      "default": 9000
+    },
+    "TALLY_HOST": {
+      "type": "string",
+      "title": "Tally Host",
+      "description": "Host name or IP address for Tally XML server",
+      "required": false,
+      "default": "localhost"
     }
   },
   "tools": [

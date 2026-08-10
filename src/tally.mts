@@ -6,6 +6,7 @@ import { utility } from './utility.mjs';
 import { lstCollectionFields, lstPushXml, lstReportConfig, lstReportXml, xmlInvokeAction, xmlQueryCollection, xmlDeleteMasters } from './definition.mjs';
 
 const tally_port = parseInt(process.env.TALLY_PORT || '9000'); // default to 9000 XML port of Tally
+const tally_host = process.env.TALLY_HOST || 'localhost'; // default to localhost
 const lstPullReport: m.ModelPullReportInfo[] = lstReportConfig;
 
 const nEnv = new nunjucks.Environment();
@@ -243,7 +244,7 @@ async function postTallyXML(xml: string): Promise<string> {
         try {
 
             let req = http.request({
-                hostname: 'localhost',
+                hostname: tally_host,
                 port: tally_port,
                 path: '',
                 method: 'POST',

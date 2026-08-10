@@ -5,6 +5,10 @@
         "moduleResolution": "nodenext",
         "outDir": "dist",
         "rootDir": "src",
+        "types": [
+            "node",
+            "emscripten"
+        ],
         "strict": true,
         "sourceMap": true
     },

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import express from 'express';
 import crypto from 'node:crypto';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import { registerMcpServer } from './mcp.mjs'

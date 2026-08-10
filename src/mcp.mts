@@ -8,6 +8,8 @@ import { utility } from './utility.mjs';
 
 dotenv.config({ override: true, quiet: true });
 
+const isWriteBlocked = process.env.BLOCK_WRITE === '1';
+
 const lstCollections = lstCollectionFields.map((item) => item.collection);
 
 export async function registerMcpServer(): Promise<McpServer> {
@@ -691,168 +693,6 @@ export async function registerMcpServer(): Promise<McpServer> {
   );
 
   mcpServer.registerTool(
-    'ledger-create-update',
-    {
-      title: 'Create or Update Ledger',
-      description: `create or update ledger master data in Tally Prime, returns success count of created and / or altered records`,
-      inputSchema: {
-        targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
-        masters: z.array(z.object({
-          name: z.string().describe('ledger name or updated ledger name for modify / update'),
-          _name: z.string().optional().describe('old ledger name to modify / update, validate if ledger exists using list-master tool with collection as ledger'),
-          parent: z.string().optional().describe('group name for the ledger, validate if group exists using list-master tool with collection as group'),
-          openingBalance: z.number().optional().describe('optional opening balance for the ledger debit is negative and credit is positive'),
-          isBillWise: z.boolean().optional().describe('optional billwise or bill by bill tracking is enabled for the ledger, default is false, set it undefined to keep it unchanged'),
-          billCreditPeriod: z.number().optional().describe('optional bill credit period in number of days, applicable only if isBillWise is true, set it undefined to keep it unchanged'),
-          mailingDetails: z.object({
-            name: z.string().optional().describe('business name for mailing details, set it undefined to keep it unchanged, set it blank to reset it to Not Applicable'),
-            country: z.string().describe('country for mailing details, validate it using query-option-values tool with input optionName as country-state, set it blank to reset it to Not Applicable'),
-            state: z.string().describe('state for mailing details, validate it using query-option-values tool with input optionName as country-state, set it blank to reset it to Not Applicable'),
-            address: z.string().optional().describe('address for mailing details, set it blank to reset it'),
-            pincode: z.string().regex(/^\d{6}$/).optional().describe('pincode for mailing details 6 digit number, set it blank to reset it, set it undefined to keep it unchanged'),
-          }).optional().describe('optional mailing details for the ledger'),
-          gstRegistrationDetails: z.object({
-            gstin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('GSTIN or GST number'),
-            registrationType: z.enum(['Composition', 'Regular', 'Unregistered/Consumer', 'Government entity / TDS', 'Regular - SEZ', 'Regular-Deemed Exporter', 'Regular-Exports (EOU)', 'e-Commerce Operator', 'Input Service Distributor', 'Embassy/UN Body', 'Non-Resident Taxpayer']).optional().describe('GST registration type'),
-            placeOfSupply: z.string().optional().describe('place of supply for GST, validate it using query-option-values tool with input optionName as country-state with value of state property, set it blank to reset it to Not Applicable, set it undefined to keep it unchanged'),
-          }).optional().describe('optional GST registration details for the ledger, applicable only if country in mailing details is India'),
-        })).describe('array of master data objects to create or update'),
-      },
-      annotations: {
-        readOnlyHint: false,
-        openWorldHint: false,
-        destructiveHint: true,
-        idempotentHint: true
-      }
-    },
-    async (args) => {
-      try {
-        if (Array.isArray(args.masters) && args.masters.length > 0) {
-          let objMasterInput: Map<string, any> = new Map();
-          let lstObjMasters: any[] = [];
-
-          // assign books begin from date by calling queryCollection
-          let booksBeginFrom = new Date();
-          const resultBooksBeginFrom = await queryCollection('Company', ['Name', 'BooksFrom', 'IsActiveCompany'], new Map<string, string>());
-
-          if (resultBooksBeginFrom.length === 0) {
-            return {
-              isError: true,
-              content: [{ type: 'text', text: 'No company found to determine books begin from date' }]
-            }
-          }
-
-          if (!args.targetCompany) { //choose Active company
-            booksBeginFrom = resultBooksBeginFrom.filter((item) => item.IsActiveCompany)[0].BooksFrom;
-          } else { //choose specified target company
-            booksBeginFrom = resultBooksBeginFrom.filter((item) => item.Name === args.targetCompany)[0].BooksFrom;
-          }
-
-          args.masters.forEach((master) => {
-            let objLedger: any = {};
-            if (master._name) objLedger._name = master._name;
-            if (master.name) objLedger.name = master.name;
-            if (master.parent) objLedger.parent = master.parent;
-            if (master.openingBalance !== undefined) objLedger.openingBalance = master.openingBalance;
-            if (master.mailingDetails) {
-              objLedger.mailingDetails = master.mailingDetails;
-              objLedger.mailingDetails.applicableFrom = booksBeginFrom;
-            }
-            if (master.gstRegistrationDetails) {
-              objLedger.gstRegistrationDetails = master.gstRegistrationDetails;
-              objLedger.gstRegistrationDetails.applicableFrom = booksBeginFrom;
-            }
-            if (master.isBillWise !== undefined) {
-              objLedger.isBillWise = master.isBillWise;
-            }
-            if (master.isBillWise === true && master.billCreditPeriod !== undefined && typeof master.billCreditPeriod === 'number') {
-              let creditDays = Math.trunc(master.billCreditPeriod);
-              objLedger.billCreditPeriod = creditDays;
-            }
-            lstObjMasters.push(objLedger);
-          });
-
-          objMasterInput.set('masters', lstObjMasters);
-
-          if (args.targetCompany) {
-            objMasterInput.set('targetCompany', args.targetCompany);
-          }
-
-          let result = await importMasters('master-ledger', objMasterInput);
-
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result) }]
-          }
-        } else {
-          return {
-            isError: true,
-            content: [{ type: 'text', text: 'masters array is required with at least one master object to create or update' }]
-          }
-        }
-      } catch (err) {
-        return {
-          isError: true,
-          content: [{ type: 'text', text: JSON.stringify(err) }]
-        };
-      }
-
-    }
-  );
-
-  mcpServer.registerTool(
-    'delete-master',
-    {
-      title: 'Delete Master',
-      description: `deletes a master object from selected collection in Tally Prime and returns success count of deleted records`,
-      inputSchema: {
-        targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
-        collection: z.enum(lstCollections).describe('target collection for deletion, validate collection and object name using list-master tool where applicable'),
-        name: z.array(z.string()).describe('list of name of that specific master object from that collection to delete, validate it using list-master tool with collection as the target collection before calling this tool')
-      },
-      annotations: {
-        readOnlyHint: false,
-        openWorldHint: false,
-        destructiveHint: true,
-        idempotentHint: true
-      }
-    },
-    async (args) => {
-      try {
-        const targetCollection = args.collection.trim();
-
-        // validate if name exists for the specified collection before making delete call to avoid unnecessary processing and load on Tally
-        let lstNames = await queryCollection(targetCollection, ['Name'], new Map<string, string>(), args.targetCompany);
-
-        // iterate through args.name and check if each name exists in lstNames, if any name is not found then return error with list of names not found, if all names are found then proceed with delete operation
-        let lstNamesNotFound: string[] = [];
-        args.name.forEach((name) => {
-          if (!lstNames.some((item) => item.Name === name)) {
-            lstNamesNotFound.push(name);
-          }
-        });
-
-        if (lstNamesNotFound.length > 0) {
-          return {
-            isError: true,
-            content: [{ type: 'text', text: `No master object found with the given name(s) in the ${targetCollection} collection: ${lstNamesNotFound.join(', ')}. Kindly validate it using list-master tool` }]
-          };
-        }
-
-        const result = await deleteMasters(targetCollection, args.name, args.targetCompany);
-
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result) }]
-        };
-      } catch (err) {
-        return {
-          isError: true,
-          content: [{ type: 'text', text: JSON.stringify(err) }]
-        };
-      }
-    }
-  );
-
-  mcpServer.registerTool(
     'set-company',
     {
       title: 'Set Company',
@@ -878,8 +718,6 @@ export async function registerMcpServer(): Promise<McpServer> {
 
     }
   );
-
-
 
   mcpServer.registerTool(
     'set-period',
@@ -909,6 +747,171 @@ export async function registerMcpServer(): Promise<McpServer> {
       }
     }
   );
+
+  if (!isWriteBlocked) {
+
+    mcpServer.registerTool(
+      'ledger-create-update',
+      {
+        title: 'Create or Update Ledger',
+        description: `create or update ledger master data in Tally Prime, returns success count of created and / or altered records`,
+        inputSchema: {
+          targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
+          masters: z.array(z.object({
+            name: z.string().describe('ledger name or updated ledger name for modify / update'),
+            _name: z.string().optional().describe('old ledger name to modify / update, validate if ledger exists using list-master tool with collection as ledger'),
+            parent: z.string().optional().describe('group name for the ledger, validate if group exists using list-master tool with collection as group'),
+            openingBalance: z.number().optional().describe('optional opening balance for the ledger debit is negative and credit is positive'),
+            isBillWise: z.boolean().optional().describe('optional billwise or bill by bill tracking is enabled for the ledger, default is false, set it undefined to keep it unchanged'),
+            billCreditPeriod: z.number().optional().describe('optional bill credit period in number of days, applicable only if isBillWise is true, set it undefined to keep it unchanged'),
+            mailingDetails: z.object({
+              name: z.string().optional().describe('business name for mailing details, set it undefined to keep it unchanged, set it blank to reset it to Not Applicable'),
+              country: z.string().describe('country for mailing details, validate it using query-option-values tool with input optionName as country-state, set it blank to reset it to Not Applicable'),
+              state: z.string().describe('state for mailing details, validate it using query-option-values tool with input optionName as country-state, set it blank to reset it to Not Applicable'),
+              address: z.string().optional().describe('address for mailing details, set it blank to reset it'),
+              pincode: z.string().regex(/^\d{6}$/).optional().describe('pincode for mailing details 6 digit number, set it blank to reset it, set it undefined to keep it unchanged'),
+            }).optional().describe('optional mailing details for the ledger'),
+            gstRegistrationDetails: z.object({
+              gstin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('GSTIN or GST number'),
+              registrationType: z.enum(['Composition', 'Regular', 'Unregistered/Consumer', 'Government entity / TDS', 'Regular - SEZ', 'Regular-Deemed Exporter', 'Regular-Exports (EOU)', 'e-Commerce Operator', 'Input Service Distributor', 'Embassy/UN Body', 'Non-Resident Taxpayer']).optional().describe('GST registration type'),
+              placeOfSupply: z.string().optional().describe('place of supply for GST, validate it using query-option-values tool with input optionName as country-state with value of state property, set it blank to reset it to Not Applicable, set it undefined to keep it unchanged'),
+            }).optional().describe('optional GST registration details for the ledger, applicable only if country in mailing details is India'),
+          })).describe('array of master data objects to create or update'),
+        },
+        annotations: {
+          readOnlyHint: false,
+          openWorldHint: false,
+          destructiveHint: true,
+          idempotentHint: true
+        }
+      },
+      async (args) => {
+        try {
+          if (Array.isArray(args.masters) && args.masters.length > 0) {
+            let objMasterInput: Map<string, any> = new Map();
+            let lstObjMasters: any[] = [];
+
+            // assign books begin from date by calling queryCollection
+            let booksBeginFrom = new Date();
+            const resultBooksBeginFrom = await queryCollection('Company', ['Name', 'BooksFrom', 'IsActiveCompany'], new Map<string, string>());
+
+            if (resultBooksBeginFrom.length === 0) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: 'No company found to determine books begin from date' }]
+              }
+            }
+
+            if (!args.targetCompany) { //choose Active company
+              booksBeginFrom = resultBooksBeginFrom.filter((item) => item.IsActiveCompany)[0].BooksFrom;
+            } else { //choose specified target company
+              booksBeginFrom = resultBooksBeginFrom.filter((item) => item.Name === args.targetCompany)[0].BooksFrom;
+            }
+
+            args.masters.forEach((master) => {
+              let objLedger: any = {};
+              if (master._name) objLedger._name = master._name;
+              if (master.name) objLedger.name = master.name;
+              if (master.parent) objLedger.parent = master.parent;
+              if (master.openingBalance !== undefined) objLedger.openingBalance = master.openingBalance;
+              if (master.mailingDetails) {
+                objLedger.mailingDetails = master.mailingDetails;
+                objLedger.mailingDetails.applicableFrom = booksBeginFrom;
+              }
+              if (master.gstRegistrationDetails) {
+                objLedger.gstRegistrationDetails = master.gstRegistrationDetails;
+                objLedger.gstRegistrationDetails.applicableFrom = booksBeginFrom;
+              }
+              if (master.isBillWise !== undefined) {
+                objLedger.isBillWise = master.isBillWise;
+              }
+              if (master.isBillWise === true && master.billCreditPeriod !== undefined && typeof master.billCreditPeriod === 'number') {
+                let creditDays = Math.trunc(master.billCreditPeriod);
+                objLedger.billCreditPeriod = creditDays;
+              }
+              lstObjMasters.push(objLedger);
+            });
+
+            objMasterInput.set('masters', lstObjMasters);
+
+            if (args.targetCompany) {
+              objMasterInput.set('targetCompany', args.targetCompany);
+            }
+
+            let result = await importMasters('master-ledger', objMasterInput);
+
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result) }]
+            }
+          } else {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: 'masters array is required with at least one master object to create or update' }]
+            }
+          }
+        } catch (err) {
+          return {
+            isError: true,
+            content: [{ type: 'text', text: JSON.stringify(err) }]
+          };
+        }
+
+      }
+    );
+
+    mcpServer.registerTool(
+      'delete-master',
+      {
+        title: 'Delete Master',
+        description: `deletes a master object from selected collection in Tally Prime and returns success count of deleted records`,
+        inputSchema: {
+          targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
+          collection: z.enum(lstCollections).describe('target collection for deletion, validate collection and object name using list-master tool where applicable'),
+          name: z.array(z.string()).describe('list of name of that specific master object from that collection to delete, validate it using list-master tool with collection as the target collection before calling this tool')
+        },
+        annotations: {
+          readOnlyHint: false,
+          openWorldHint: false,
+          destructiveHint: true,
+          idempotentHint: true
+        }
+      },
+      async (args) => {
+        try {
+          const targetCollection = args.collection.trim();
+
+          // validate if name exists for the specified collection before making delete call to avoid unnecessary processing and load on Tally
+          let lstNames = await queryCollection(targetCollection, ['Name'], new Map<string, string>(), args.targetCompany);
+
+          // iterate through args.name and check if each name exists in lstNames, if any name is not found then return error with list of names not found, if all names are found then proceed with delete operation
+          let lstNamesNotFound: string[] = [];
+          args.name.forEach((name) => {
+            if (!lstNames.some((item) => item.Name === name)) {
+              lstNamesNotFound.push(name);
+            }
+          });
+
+          if (lstNamesNotFound.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: `No master object found with the given name(s) in the ${targetCollection} collection: ${lstNamesNotFound.join(', ')}. Kindly validate it using list-master tool` }]
+            };
+          }
+
+          const result = await deleteMasters(targetCollection, args.name, args.targetCompany);
+
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result) }]
+          };
+        } catch (err) {
+          return {
+            isError: true,
+            content: [{ type: 'text', text: JSON.stringify(err) }]
+          };
+        }
+      }
+    );
+  }
 
   return mcpServer;
 }

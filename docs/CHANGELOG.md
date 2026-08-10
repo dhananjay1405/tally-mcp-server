@@ -1,5 +1,16 @@
 # Release History
 
+### Version: v7.5 [10-Aug-2026]
+
+Added:
+* Add many fields into collection definition to make query-collection even more robust
+* Introduced feature of blocking access to Write functionality tool as discussed in [#26](https://github.com/dhananjay1405/tally-mcp-server/issues/26) by introduction of environment variable BLOCK_WRITE
+* MCP was unable to connect to tally running of PC other than local, as localhost was hard-coded in Tally Host setting. Based on suggestion for improvement in [#25](https://github.com/dhananjay1405/tally-mcp-server/issues/25) environment variable TALLY_HOST was introduced to allow setting of IP address to connect Tally running on different computer
+
+Fixed:
+* House-keeping task like upgrading of depedencies (node packages)
+* Improvement in the documentation
+
 ### Version: v7.4 [03-Jul-2026]
 
 Added:
