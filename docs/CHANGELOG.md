@@ -1,5 +1,10 @@
 # Release History
 
+### Version: v7.7 [01-Oct-2026]
+
+Added:
+* Tool *voucher-journal* introduced to create Journal vouchers directly in Tally Prime
+
 ### Version: v7.6 [04-Sep-2026]
 Fixed:
 * Tool *ledger-account* with instance where the target ledger being queried is used multiple times in a single voucher was not being aggregated leading to incorret data being returned as reporting in [#28](https://github.com/dhananjay1405/tally-mcp-server/issues/28) is now fixed

@@ -63,3 +63,19 @@ export interface CreateUpdateDeleteStatus {
     cancelled?: number;
     exceptions?: number;
 }
+
+export interface VoucherAccountingEntry {
+    ledgerName: string;
+    amount: number;
+}
+
+export interface VoucherBase {
+    date: string | Date;
+    voucherType: string;
+    voucherNumber?: string;
+    narration?: string;
+}
+
+export interface VoucherAccounting extends VoucherBase {
+    accountingEntry: VoucherAccountingEntry[];
+}
