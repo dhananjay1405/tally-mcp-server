@@ -26,6 +26,42 @@ export function renameObjectArrayProperties(source, keyMap) {
         return renamed;
     });
 }
+export async function validateVoucherTypeParent(lstVoucherType, targetParent, targetCompany) {
+    let retval = []; // invalid ledgers
+    let lstVoucherTypeNames = await queryCollection('VoucherType', ['Name'], new Map([['Eq_Parent', `$Parent = "${targetParent}"`]]), targetCompany);
+    //validate each ledger against the list of existing ledger names and prepare a list of invalid ledgers
+    for (let voucherType of lstVoucherType) {
+        if (!lstVoucherTypeNames.some(item => item.Name === voucherType)) {
+            retval.push(voucherType);
+        }
+    }
+    return retval;
+}
+export async function validateLedgers(lstLedgers, targetCompany) {
+    let retval = []; // invalid ledgers
+    let lstLedgerNames = await queryCollection('Ledger', ['Name'], new Map(), targetCompany);
+    //validate each ledger against the list of existing ledger names and prepare a list of invalid ledgers
+    for (let ledger of lstLedgers) {
+        if (!lstLedgerNames.some(item => item.Name === ledger)) {
+            retval.push(ledger);
+        }
+    }
+    return retval;
+}
+export async function validateVoucherDebitCreditBalancing(objVoucher) {
+    let netDebitCredit = 0;
+    // multiply each amount by 100 to avoid floating point precision issues
+    for (let entry of objVoucher.accountingEntry) {
+        netDebitCredit += Math.round(entry.amount * 100);
+    }
+    return netDebitCredit === 0;
+}
+export async function stripExtraDecimalVoucherAmount(objVoucher) {
+    // strip decimal places beyond 2 places for each accounting entry amount
+    for (let entry of objVoucher.accountingEntry) {
+        entry.amount = Math.round(entry.amount * 100) / 100;
+    }
+}
 export async function fetchReport(targetReport, inputParams) {
     let retval = {
         data: undefined
@@ -155,10 +191,10 @@ export async function invokeTallyAction(targetAction, lstParameters) {
         throw err;
     }
 }
-export async function importMasters(targetMaster, objMasterInput) {
+export async function importMastersTransactions(targetObjectXml, objInput) {
     try {
-        let xmlTemplate = lstPushXml.get(targetMaster) || '';
-        let respContent = await sendTallyXml(xmlTemplate, objMasterInput); //send XML to Tally and get response
+        let xmlTemplate = lstPushXml.get(targetObjectXml) || '';
+        let respContent = await sendTallyXml(xmlTemplate, objInput); //send XML to Tally and get response
         const xmlParser = new XMLParser();
         let resultObj = xmlParser.parse(respContent);
         let retval = resultObj['RESPONSE'];

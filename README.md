@@ -18,14 +18,23 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v7.6.zip](https://excelkida.com/resource/tally-mcp-server-v7.6.zip)
+[https://excelkida.com/resource/tally-mcp-server-v7.7.zip](https://excelkida.com/resource/tally-mcp-server-v7.7.zip)
 
 One-click installer **extension** for **Claude Desktop**<br>
-[https://excelkida.com/resource/tally-mcp-server-v7.6.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.6.mcpb)
+[https://excelkida.com/resource/tally-mcp-server-v7.7.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.7.mcpb)
 
-Last updated: version **7.6** [04-Sep-2026]
+Last updated: version **7.7** [01-Oct-2026]
 
 Refer docs/CHANGELOG.md for details
+
+## Contact
+Project developed & maintained by:
+
+**Dhananjay Gokhale** <br>
+(Chartered Accountant)
+
+Email: **info@excelkida.com** <br>
+Whatsapp: **(+91) 90284-63366**
 
 ## Supported Platform
 Implementation was tested on below AI platform
@@ -35,6 +44,8 @@ Implementation was tested on below AI platform
 |Claude AI| :heavy_check_mark: | :heavy_check_mark: |
 |ChatGPT|| :heavy_check_mark: |
 |Grok|| :heavy_check_mark: |
+|Mistral|| :heavy_check_mark: |
+|LM Studio| :heavy_check_mark: ||
 
 
 ## Setup (Local)
@@ -110,7 +121,7 @@ This mode of setup is to be used, when using browser-based MCP client like ChatG
 
 ## Available Tools
 
-This server currently exposes 19 MCP tools.
+This server currently exposes 20 MCP tools.
 
 ### metadata-collection
 Returns metadata for supported collections.
@@ -408,6 +419,36 @@ Delete one (or more) masters from Tally
 **Output**
 JSON result returned by delete operation (count of deleted, skipped, etc).
 
+### voucher-journal
+Creates one (or more) Journal vouchers in Tally.
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name (defaults to active company)|
+|vouchers|Array of journal voucher objects to create|
+
+Voucher object accepts following
+
+|Property|Description|
+|--|--|
+|isoptional|(optional) Set to `true` to create Optional voucher|
+|date|Voucher date in YYYY-MM-DD|
+|voucherType|(optional) Voucher type (defaults to `Journal` and must belong to Journal parent)|
+|voucherNumber|(optional) Voucher number|
+|narration|(optional) Narration text|
+|accountingEntry|Array of accounting lines (minimum 2 lines and sum of amount must be zero)|
+
+Accounting entry object accepts following
+
+|Property|Description|
+|--|--|
+|ledgerName|Ledger name|
+|amount|Amount for the line (**positive** = Credit / **negative** = Debit)|
+
+**Output**
+JSON result returned by import operation (success/failure details).
+
 ### set-company
 Sets active company context in Tally Prime.
 
@@ -443,9 +484,3 @@ End-users are free to hard-code few settings which needs to be applied
 |PORT|Tally MCP Server port number. Applicable only if Tally Prime MCP Server is deployed as Remote MCP server (*optional*, default is **3000**). Not applicable for Claude Desktop|
 |MCP_DOMAIN|Domain name of Tally MCP Server website (*optional*, default is https://localhost:9000). Not applicable for Claude Desktop|
 |PASSWORD|Password for the OAuth Login front-end page to authenticate genuine user (kindly set this to some complex password default is **password**). Not applicable for Claude Desktop|
-
-## Contact
-Project developed & maintained by: **Dhananjay Gokhale**
-
-Email: **info@excelkida.com** <br>
-Whatsapp: **(+91) 90284-63366**

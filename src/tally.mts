@@ -34,6 +34,54 @@ export function renameObjectArrayProperties(source: any[], keyMap: Map<string, s
     });
 }
 
+export async function validateVoucherTypeParent(lstVoucherType: string[], targetParent: string, targetCompany?: string): Promise<string[]> {
+    let retval: string[] = []; // invalid ledgers
+    let lstVoucherTypeNames = await queryCollection('VoucherType', ['Name'], new Map<string, string>([['Eq_Parent', `$Parent = "${targetParent}"`]]), targetCompany);
+
+    //validate each ledger against the list of existing ledger names and prepare a list of invalid ledgers
+    for (let voucherType of lstVoucherType) {
+        if (!lstVoucherTypeNames.some(item => item.Name === voucherType)) {
+            retval.push(voucherType);
+        }
+    }
+
+    return retval;
+}
+
+export async function validateLedgers(lstLedgers: string[], targetCompany?: string): Promise<string[]> {
+    let retval: string[] = []; // invalid ledgers
+    let lstLedgerNames = await queryCollection('Ledger', ['Name'], new Map<string, string>(), targetCompany);
+
+    //validate each ledger against the list of existing ledger names and prepare a list of invalid ledgers
+    for (let ledger of lstLedgers) {
+        if (!lstLedgerNames.some(item => item.Name === ledger)) {
+            retval.push(ledger);
+        }
+    }
+
+    return retval;
+}
+
+export async function validateVoucherDebitCreditBalancing(objVoucher: m.VoucherAccounting): Promise<boolean> {
+
+    let netDebitCredit = 0;
+
+    // multiply each amount by 100 to avoid floating point precision issues
+    for (let entry of objVoucher.accountingEntry) {
+        netDebitCredit += Math.round(entry.amount * 100);
+    }
+
+    return netDebitCredit === 0;
+}
+
+export async function stripExtraDecimalVoucherAmount(objVoucher: m.VoucherAccounting): Promise<void> {
+
+    // strip decimal places beyond 2 places for each accounting entry amount
+    for (let entry of objVoucher.accountingEntry) {
+        entry.amount = Math.round(entry.amount * 100) / 100;
+    }
+}
+
 export async function fetchReport(targetReport: string, inputParams: Map<string, any>): Promise<m.ModelPullResponse> {
     let retval: m.ModelPullResponse = {
         data: undefined
@@ -184,10 +232,10 @@ export async function invokeTallyAction(targetAction: string, lstParameters: Map
 
 }
 
-export async function importMasters(targetMaster: string, objMasterInput: Map<string, any>): Promise<m.CreateUpdateDeleteStatus> {
+export async function importMastersTransactions(targetObjectXml: string, objInput: Map<string, any>): Promise<m.CreateUpdateDeleteStatus> {
     try {
-        let xmlTemplate = lstPushXml.get(targetMaster) || '';
-        let respContent = await sendTallyXml(xmlTemplate, objMasterInput); //send XML to Tally and get response
+        let xmlTemplate = lstPushXml.get(targetObjectXml) || '';
+        let respContent = await sendTallyXml(xmlTemplate, objInput); //send XML to Tally and get response
         const xmlParser = new XMLParser();
         let resultObj = xmlParser.parse(respContent);
         let retval: m.CreateUpdateDeleteStatus = resultObj['RESPONSE'];

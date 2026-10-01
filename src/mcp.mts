@@ -1,7 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import dotenv from 'dotenv';
-import { deleteMasters, fetchReport, importMasters, invokeTallyAction, queryCollection, renameObjectArrayProperties } from './tally.mjs';
+import * as m from './models.mjs';
+import { deleteMasters, fetchReport, importMastersTransactions, invokeTallyAction, queryCollection, renameObjectArrayProperties, validateVoucherTypeParent, validateLedgers, validateVoucherDebitCreditBalancing, stripExtraDecimalVoucherAmount } from './tally.mjs';
 import { cacheTable, executeSQL } from './database.mjs';
 import { lstCollectionFields, lstOptionCountryState } from './definition.mjs';
 import { utility } from './utility.mjs';
@@ -838,7 +839,7 @@ export async function registerMcpServer(): Promise<McpServer> {
               objMasterInput.set('targetCompany', args.targetCompany);
             }
 
-            let result = await importMasters('master-ledger', objMasterInput);
+            let result = await importMastersTransactions('master-ledger', objMasterInput);
 
             return {
               content: [{ type: 'text', text: JSON.stringify(result) }]
@@ -911,6 +912,103 @@ export async function registerMcpServer(): Promise<McpServer> {
         }
       }
     );
+
+    mcpServer.registerTool(
+      'voucher-journal',
+      {
+        title: 'Journal Voucher',
+        description: `creates a journal voucher in Tally Prime`,
+        inputSchema: {
+          targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
+          vouchers: z.array(z.object({
+            isoptional: z.boolean().optional().default(false).describe('indicates if the voucher is optional, to be used when user wants to be on safe side, if this option is set to true then notify user that they need to manually make it regular to effect the books of accounts'),
+            date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('voucher date'),
+            voucherType: z.string().optional().default('Journal').describe('voucher type validate using list-master tool with collection as vouchertype'),
+            voucherNumber: z.string().optional().describe('voucher number for the voucher'),
+            narration: z.string().optional().describe('narration for the voucher'),
+            accountingEntry: z.array(z.object({
+              ledgerName: z.string().describe('ledger name validate it using list-master tool with collection as ledger'),
+              amount: z.number().describe('amount for the ledger, positive for credit and negative for debit')
+            })).min(2).describe('accounting entries for the voucher, at least two entries required, sum of amount should be zero')
+          }))
+        },
+        annotations: {
+          readOnlyHint: false,
+          openWorldHint: false,
+          destructiveHint: true,
+          idempotentHint: false
+        }
+      },
+      async (args) => {
+        try {
+
+          let lstTargetVouchers: m.VoucherAccounting[] = args.vouchers;
+
+          // Validate voucher type exists in the system before proceeding by iterating through individual vouchers
+          let lstVoucherTypeNames = lstTargetVouchers.map(v => v.voucherType);
+          let lstInvalidVoucherTypes: string[] = await validateVoucherTypeParent(lstVoucherTypeNames, 'Journal', args.targetCompany);
+          if (lstInvalidVoucherTypes.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: JSON.stringify(`Invalid Voucher Type(s): ${lstInvalidVoucherTypes.join(', ')}`) }]
+            };
+          }
+
+          // check if valid date is entered for each voucher, convert date property to Date object in the vouchers object
+          for (const voucher of lstTargetVouchers) {
+            const voucherDate = typeof voucher.date === 'string' ? utility.Date.parse(voucher.date, 'yyyy-MM-dd') : undefined;
+            if (voucherDate === null || voucherDate === undefined) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`Invalid date for voucher: ${voucher.date}`) }]
+              };
+            }
+            voucher.date = voucherDate;
+          }
+
+          // validate if all the ledger names exist in the system before proceeding by iterating through individual vouchers and accountingEntry lines
+          let lstLedgerNames = args.vouchers.map(v => v.accountingEntry.map(e => e.ledgerName)).flat();
+          let invalidLedgerNames: string[] = await validateLedgers(lstLedgerNames, args.targetCompany);
+          if (invalidLedgerNames.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: JSON.stringify(`Invalid Ledger(s): ${invalidLedgerNames.join(', ')}`) }]
+            };
+          }
+
+          // iterate through each voucher and strip extra decimal places for accounting entry amounts
+          for (const voucher of lstTargetVouchers) {
+            await stripExtraDecimalVoucherAmount(voucher);
+          }
+
+          // validate if the total of accounting entries sum to zero for each voucher
+          for (const voucher of lstTargetVouchers) {
+            const isValid = await validateVoucherDebitCreditBalancing(voucher);
+            if (!isValid) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify('accountingEntry Debit and Credit do not balance, amount must sum to zero') }]
+              };
+            }
+          }
+
+          let objVoucherInput: Map<string, any> = new Map();
+          objVoucherInput.set('vouchers', lstTargetVouchers);
+          if (args.targetCompany) objVoucherInput.set('targetCompany', args.targetCompany);
+          const result = await importMastersTransactions('voucher-journal', objVoucherInput);
+
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result) }]
+          };
+        } catch (err) {
+          return {
+            isError: true,
+            content: [{ type: 'text', text: JSON.stringify(err) }]
+          };
+        }
+      }
+    );
+
   }
 
   return mcpServer;

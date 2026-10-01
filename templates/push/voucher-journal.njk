@@ -1,0 +1,43 @@
+<ENVELOPE>
+    <HEADER>
+        <TALLYREQUEST>Import Data</TALLYREQUEST>
+    </HEADER>
+    <BODY>
+        <IMPORTDATA>
+            <REQUESTDESC>
+                <REPORTNAME>Vouchers</REPORTNAME>
+                <STATICVARIABLES>
+                    {% if targetCompany %}
+                    <SVCURRENTCOMPANY>{{targetCompany | escape}}</SVCURRENTCOMPANY>
+                    {% endif %}
+                </STATICVARIABLES>
+            </REQUESTDESC>
+            <REQUESTDATA>
+                {% for voucher in vouchers %}
+                <TALLYMESSAGE>
+                    <VOUCHER VCHTYPE="{{ voucher.voucherType | escape }}" ACTION="Create" OBJVIEW="Accounting Voucher View">
+                        <VOUCHERTYPENAME>{{ voucher.voucherType | escape }}</VOUCHERTYPENAME>
+                        <DATE>{{ voucher.date | formatDate("yyyyMMdd") }}</DATE>
+                        {% if voucher.narration != undefined and voucher.narration != "" %}
+                        <NARRATION>{{ voucher.narration | escape }}</NARRATION>
+                        {% endif %}
+                        {% if voucher.voucherNumber != undefined %}
+                        <VOUCHERNUMBER>{{ voucher.voucherNumber | escape }}</VOUCHERNUMBER>
+                        {% endif %}
+                        {% if voucher.isoptional === true %}
+                        <ISOPTIONAL>Yes</ISOPTIONAL>
+                        {% endif %}
+                        {% for accountingLineItem in voucher.accountingEntry %}
+                        <ALLLEDGERENTRIES.LIST>
+                            <LEDGERNAME>{{ accountingLineItem.ledgerName | escape }}</LEDGERNAME>
+                            <ISDEEMEDPOSITIVE>{{ "Yes" if accountingLineItem.amount < 0 else "No" }}</ISDEEMEDPOSITIVE>
+                            <AMOUNT>{{accountingLineItem.amount }}</AMOUNT>
+                        </ALLLEDGERENTRIES.LIST>
+                        {% endfor %}
+                    </VOUCHER>
+                </TALLYMESSAGE>
+                {% endfor %}
+            </REQUESTDATA>
+        </IMPORTDATA>
+    </BODY>
+</ENVELOPE>
