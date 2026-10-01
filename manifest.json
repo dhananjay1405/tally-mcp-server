@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "tally-mcp-server",
   "display_name": "Tally Prime",
-  "version": "7.6.0",
+  "version": "7.7.0",
   "description": "Expose Tally Prime ERP data to MCP-compatible clients like Claude Desktop.",
   "author": {
     "name": "Dhananjay Gokhale",
@@ -114,6 +114,10 @@
     {
       "name": "ledger-create-update",
       "description": "create or update ledger master data in Tally Prime, returns success count of created and / or altered records"
+    },
+    {
+      "name": "journal-voucher",
+      "description": "creates or updates journal vouchers in Tally Prime, returns success count of created and / or altered records"
     },
     {
       "name": "set-company",
