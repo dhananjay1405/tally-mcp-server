@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import dotenv from 'dotenv';
-import { deleteMasters, fetchReport, importMasters, invokeTallyAction, queryCollection, renameObjectArrayProperties } from './tally.mjs';
+import { deleteMasters, fetchReport, importMastersTransactions, invokeTallyAction, queryCollection, renameObjectArrayProperties } from './tally.mjs';
 import { cacheTable, executeSQL } from './database.mjs';
 import { lstCollectionFields, lstOptionCountryState } from './definition.mjs';
 import { utility } from './utility.mjs';
@@ -838,7 +838,7 @@ export async function registerMcpServer(): Promise<McpServer> {
               objMasterInput.set('targetCompany', args.targetCompany);
             }
 
-            let result = await importMasters('master-ledger', objMasterInput);
+            let result = await importMastersTransactions('master-ledger', objMasterInput);
 
             return {
               content: [{ type: 'text', text: JSON.stringify(result) }]

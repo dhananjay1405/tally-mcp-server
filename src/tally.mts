@@ -184,10 +184,10 @@ export async function invokeTallyAction(targetAction: string, lstParameters: Map
 
 }
 
-export async function importMasters(targetMaster: string, objMasterInput: Map<string, any>): Promise<m.CreateUpdateDeleteStatus> {
+export async function importMastersTransactions(targetObjectXml: string, objInput: Map<string, any>): Promise<m.CreateUpdateDeleteStatus> {
     try {
-        let xmlTemplate = lstPushXml.get(targetMaster) || '';
-        let respContent = await sendTallyXml(xmlTemplate, objMasterInput); //send XML to Tally and get response
+        let xmlTemplate = lstPushXml.get(targetObjectXml) || '';
+        let respContent = await sendTallyXml(xmlTemplate, objInput); //send XML to Tally and get response
         const xmlParser = new XMLParser();
         let resultObj = xmlParser.parse(respContent);
         let retval: m.CreateUpdateDeleteStatus = resultObj['RESPONSE'];
