@@ -162,7 +162,6 @@ export const lstCollectionFields = [
             { name: 'OutwardQuantity', datatype: 'quantity', description: 'total outward quantity sales or purchase return or stock transfer during the period from and to date, it will be in negative which denotes outflow to be treated as positive and vice-a-versa' },
             { name: 'InwardValue', datatype: 'amount', description: 'total inward value of purchase or sales return or stock transfer during the period from and to date, negative denotes debit and positive credit' },
             { name: 'OutwardValue', datatype: 'amount', description: 'total outward value of sales or purchase return or stock transfer during the period from and to date, positive denotes credit and negative debit' },
-            { name: 'CostingMethod', datatype: 'string', description: 'method of valuation of stock which can be Avg. Cost (Average Cost), FIFO (First in First Out), Std. Cost (Standard Cost), At Zero Cost, Monthly Avg. Cost' },
             { name: 'GSTMSTTypeofSupply', datatype: 'string', description: 'GST type of supply' },
             { name: 'InfGSTHSNCode', datatype: 'string', description: 'GST HSN code' },
             { name: 'InfGSTHSNDescription', datatype: 'string', description: 'GST HSN description' },
