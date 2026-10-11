@@ -1,5 +1,13 @@
 # Release History
 
+### Version: v7.8 [11-Oct-2026]
+
+Added:
+* Documentation for the support of ChatGPT Desktop connectivity with Tally MCP Server locally
+
+Fixed:
+* Costing Method property was included twice in collection due to which Tally process was crashing [#35](https://github.com/dhananjay1405/tally-mcp-server/issues/35)
+
 ### Version: v7.7 [01-Oct-2026]
 
 Added:

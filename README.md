@@ -18,12 +18,12 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v7.7.zip](https://excelkida.com/resource/tally-mcp-server-v7.7.zip)
+[https://excelkida.com/resource/tally-mcp-server-v7.8.zip](https://excelkida.com/resource/tally-mcp-server-v7.8.zip)
 
 One-click installer **extension** for **Claude Desktop**<br>
-[https://excelkida.com/resource/tally-mcp-server-v7.7.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.7.mcpb)
+[https://excelkida.com/resource/tally-mcp-server-v7.8.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.8.mcpb)
 
-Last updated: version **7.7** [01-Oct-2026]
+Last updated: version **7.8** [11-Oct-2026]
 
 Refer docs/CHANGELOG.md for details
 
@@ -42,7 +42,7 @@ Implementation was tested on below AI platform
 |Platform|Local|Remote|
 |--|--|--|
 |Claude AI| :heavy_check_mark: | :heavy_check_mark: |
-|ChatGPT|| :heavy_check_mark: |
+|ChatGPT| :heavy_check_mark: | :heavy_check_mark: |
 |Grok|| :heavy_check_mark: |
 |Mistral|| :heavy_check_mark: |
 |LM Studio| :heavy_check_mark: ||
@@ -109,10 +109,25 @@ Verify by clicking on Tools button and check if Tally Prime appears in the list 
 
 <image src="https://excelkida.com/image/github/claude-desktop-tally-mcp-server-tool-display.png" height="595" width="722" />
 
-### Perplexity Desktop
-Perplexity Desktop version for MacOS supports connecting to local MCP server. Configuration file (JSON format) is same as demonstrated for Claude Desktop. In absense of MacBook, documentation with screenshot could not be written. Kindly refer to below blog on perplexity website, which explains the steps.
+### ChatGPT Desktop
+Download &amp; install ChatGPT Desktop from Microsoft Store. Login to it.
 
-[Perplexity Desktop MCP Connectivity](https://www.perplexity.ai/help-center/en/articles/11502712-local-and-remote-mcps-for-perplexity)
+Go to Edit &gt; Settings
+
+Navigate to Integration &gt; Plugins. Click **Add** button and choose **Add MCP Server**
+
+<image src="https://excelkida.com/image/github/chatgpt-desktop-plugin-add-mcp.png" height="798" width="1228">
+
+In the MCP settings page enter / apply below options or values <br>
+**Name** = *Tally Prime* (or any other value) <br>
+**Command to launch** = *node* <br>
+**Arguments** = *D:\\Software\\Tally MCP Server\\dist\\index.mjs* (or other path)
+
+<image src="https://excelkida.com/image/github/chatgpt-desktop-stdio-settings.png" height="884" width="866">
+
+Click **Save** button
+
+Close &amp; Re-Open ChatGPT Desktop app
 
 ## Setup (Cloud)
 This mode of setup is to be used, when using browser-based MCP client like ChatGPT, Claude AI, Copilot, OR mobile-based app for these LLM which cannot access Tally Prime running inside local PC. In this scenario, MCP Server needs to run as web-server, internally connected to Tally securely. Setup is quite complicated, and is covered in detail in **docs** folder of this project.
