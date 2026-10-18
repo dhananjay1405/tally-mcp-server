@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import * as m from './models.mjs';
-import { deleteMasters, fetchReport, importMastersTransactions, invokeTallyAction, queryCollection, renameObjectArrayProperties, validateVoucherTypeParent, validateLedgers, validateVoucherDebitCreditBalancing, stripExtraDecimalVoucherAmount } from './tally.mjs';
+import { escapeDoubleQuotesTDL, deleteMasters, fetchReport, importMastersTransactions, invokeTallyAction, queryCollection, renameObjectArrayProperties, validateVoucherTypeParent, validateLedgers, validateVoucherDebitCreditBalancing, stripExtraDecimalVoucherAmount } from './tally.mjs';
 import { cacheTable, executeSQL } from './database.mjs';
 import { lstCollectionFields, lstOptionCountryState } from './definition.mjs';
 import { utility } from './utility.mjs';
@@ -321,7 +321,7 @@ export async function registerMcpServer(): Promise<McpServer> {
       try {
         let lstFilters = new Map<string, string>();
         if (args.group_name) {
-          lstFilters.set('Specific_Group', `$$IsEqual:$Parent:"${args.group_name}"`);
+          lstFilters.set('Specific_Group', `$$IsEqual:$Parent:${escapeDoubleQuotesTDL(args.group_name)}`);
         }
         let result = await queryCollection('Ledger', ['Name', 'Parent', 'OpeningBalance', 'DebitTotals', 'CreditTotals', 'ClosingBalance'], lstFilters, args.targetCompany, new Date(args.fromDate), new Date(args.toDate));
         result = renameObjectArrayProperties(result, new Map<string, string>([['Name', 'ledger_name'], ['Parent', 'group_name'], ['OpeningBalance', 'opening_balance'], ['DebitTotals', 'net_debit'], ['CreditTotals', 'net_credit'], ['ClosingBalance', 'closing_balance']]));
@@ -466,7 +466,7 @@ export async function registerMcpServer(): Promise<McpServer> {
       try {
         let lstFilters = new Map<string, string>();
         if (args.stockGroup) {
-          lstFilters.set('Specific_StockGroup', `$$IsEqual:$Parent:"${args.stockGroup.replace(/"/g, '""')}"`);
+          lstFilters.set('Specific_StockGroup', `$$IsEqual:$Parent:${escapeDoubleQuotesTDL(args.stockGroup)}`);
         }
         let result = await queryCollection('StockItem', ['Name', 'Parent', 'OpeningBalance', 'OpeningValue', 'InwardQuantity', 'InwardValue', 'OutwardQuantity', 'OutwardValue', 'ClosingBalance', 'ClosingValue', 'AffectsGrossProfit', 'SortPosition'], lstFilters, args.targetCompany, new Date(args.fromDate), new Date(args.toDate));
         result = renameObjectArrayProperties(result, new Map<string, string>([['Name', 'stock_item_name'], ['Parent', 'stock_group_name'], ['OpeningBalance', 'opening_quantity'], ['OpeningValue', 'opening_value'], ['InwardQuantity', 'inward_quantity'], ['InwardValue', 'inward_value'], ['OutwardQuantity', 'outward_quantity'], ['OutwardValue', 'outward_value'], ['ClosingBalance', 'closing_quantity'], ['ClosingValue', 'closing_value']]));
@@ -500,7 +500,7 @@ export async function registerMcpServer(): Promise<McpServer> {
     },
     async (args) => {
       try {
-        let lstFilters = new Map<string, string>([['Exact_Ledger', `$$IsEqual:$Name:"${args.ledgerName.replace(/"/g, '""')}"`]]);
+        let lstFilters = new Map<string, string>([['Exact_Ledger', `$$IsEqual:$Name:${escapeDoubleQuotesTDL(args.ledgerName)}`]]);
         let result = await queryCollection('Ledger', ['ClosingBalance'], lstFilters, args.targetCompany, undefined, new Date(args.toDate));
         if (result.length > 0) {
           return { content: [{ type: 'text', text: JSON.stringify({ amount: result[0].ClosingBalance }) }] };
@@ -534,7 +534,7 @@ export async function registerMcpServer(): Promise<McpServer> {
     },
     async (args) => {
       try {
-        let lstFilters = new Map<string, string>([['Exact_StockItem', `$$IsEqual:$Name:"${args.itemName.replace(/"/g, '""')}"`]]);
+        let lstFilters = new Map<string, string>([['Exact_StockItem', `$$IsEqual:$Name:${escapeDoubleQuotesTDL(args.itemName)}`]]);
         let result = await queryCollection('StockItem', ['ClosingBalance', 'Unit'], lstFilters, args.targetCompany, undefined, new Date(args.toDate));
         return {
           content: [{ type: 'text', text: JSON.stringify(result.length ? { quantity: result[0].ClosingBalance, unit_of_measurement: result[0].Unit } : '') }]
@@ -607,7 +607,7 @@ export async function registerMcpServer(): Promise<McpServer> {
       }
 
       // verify if ledger exists before making report call to avoid unnecessary processing and load on Tally
-      let lstLedger = await queryCollection('Ledger', ['Name'], new Map<string, string>([['Exact_Ledger', `$$IsEqual:$Name:"${args.ledgerName.replace(/"/g, '""')}"`]]), args.targetCompany);
+      let lstLedger = await queryCollection('Ledger', ['Name'], new Map<string, string>([['Exact_Ledger', `$$IsEqual:$Name:${escapeDoubleQuotesTDL(args.ledgerName)}`]]), args.targetCompany);
       if (lstLedger.length === 0) {
         return {
           isError: true,
@@ -661,7 +661,7 @@ export async function registerMcpServer(): Promise<McpServer> {
       }
 
       // verify if stock item exists before making report call to avoid unnecessary processing and load on Tally
-      let lstStockItem = await queryCollection('StockItem', ['Name'], new Map<string, string>([['Exact_StockItem', `$$IsEqual:$Name:"${args.itemName.replace(/"/g, '""')}"`]]), args.targetCompany);
+      let lstStockItem = await queryCollection('StockItem', ['Name'], new Map<string, string>([['Exact_StockItem', `$$IsEqual:$Name:${escapeDoubleQuotesTDL(args.itemName)}`]]), args.targetCompany);
       if (lstStockItem.length === 0) {
         return {
           isError: true,

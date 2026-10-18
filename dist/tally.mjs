@@ -10,6 +10,21 @@ const nEnv = new nunjucks.Environment();
 nEnv.addFilter('formatDate', (dt, format) => {
     return utility.Date.format(dt, format);
 });
+export function escapeDoubleQuotesTDL(expr) {
+    /*
+    Examples:
+    8X3Y = "8X3Y"
+    8X"Y = "8X" + $$StrByCharCode:34 + "Y"
+    "8X3 = $$StrByCharCode:34 + "8X3"
+    8X3" = "8X3" + $$StrByCharCode:34
+    */
+    if (!expr.includes('"')) // no double quotes, safe to wrap in double quotes
+        return `"${expr}"`;
+    else if (expr.includes('"') && !expr.includes(`'`)) // contains double quotes but no single quotes, safe to wrap in single quotes
+        return `'${expr}'`;
+    else // replace instance of double quotes with $$StrByCharCode:34 and concatenate the string parts
+        return '("' + expr.replace(/\"/g, '" + \$\$\$StrByCharCode:34 + "') + '")';
+}
 export function renameObjectArrayProperties(source, keyMap) {
     if (!Array.isArray(source) || source.length == 0)
         return [];
@@ -28,7 +43,7 @@ export function renameObjectArrayProperties(source, keyMap) {
 }
 export async function validateVoucherTypeParent(lstVoucherType, targetParent, targetCompany) {
     let retval = []; // invalid ledgers
-    let lstVoucherTypeNames = await queryCollection('VoucherType', ['Name'], new Map([['Eq_Parent', `$Parent = "${targetParent}"`]]), targetCompany);
+    let lstVoucherTypeNames = await queryCollection('VoucherType', ['Name'], new Map([['Eq_Parent', `$Parent = ${escapeDoubleQuotesTDL(targetParent)}`]]), targetCompany);
     //validate each ledger against the list of existing ledger names and prepare a list of invalid ledgers
     for (let voucherType of lstVoucherType) {
         if (!lstVoucherTypeNames.some(item => item.Name === voucherType)) {
