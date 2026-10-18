@@ -18,12 +18,12 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v7.8.zip](https://excelkida.com/resource/tally-mcp-server-v7.8.zip)
+[https://excelkida.com/resource/tally-mcp-server-v7.9.zip](https://excelkida.com/resource/tally-mcp-server-v7.9.zip)
 
 One-click installer **extension** for **Claude Desktop**<br>
-[https://excelkida.com/resource/tally-mcp-server-v7.8.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.8.mcpb)
+[https://excelkida.com/resource/tally-mcp-server-v7.9.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.9.mcpb)
 
-Last updated: version **7.8** [11-Oct-2026]
+Last updated: version **7.9** [18-Oct-2026]
 
 Refer docs/CHANGELOG.md for details
 

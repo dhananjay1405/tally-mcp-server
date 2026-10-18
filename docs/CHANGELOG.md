@@ -1,5 +1,10 @@
 # Release History
 
+### Version: v7.9 [18-Oct-2026]
+
+Fixed:
+* Special character like double quotes was not being handled correctly in filter expression leading of crashing of tally.exe process as reported in bug [#37](https://github.com/dhananjay1405/tally-mcp-server/issues/37). Proper escaping now put into the place
+
 ### Version: v7.8 [11-Oct-2026]
 
 Added:

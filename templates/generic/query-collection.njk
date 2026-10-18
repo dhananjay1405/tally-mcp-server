@@ -40,7 +40,7 @@
                     {% for field in fields %}
                     <FIELD NAME="fld_{{ field.name }}">
                         {% if field.expression %}
-                        <SET>{{ field.expression }}</SET>
+                        <SET>{{ field.expression | safe }}</SET>
                         {% elif field.datatype == "date" %}
                         <SET>if $$IsEmpty:${{ field.name }} then "" else $$PyrlYYYYMMDDFormat:${{ field.name }}:"-"</SET>
                         {% elif field.datatype == "boolean" %}
@@ -67,7 +67,7 @@
                         {% endif %}
                     </COLLECTION>
                     {% for filter in filters %}
-                    <SYSTEM TYPE="Formulae" NAME="fltr_{{ filter.name }}">{{ filter.expression }}</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="fltr_{{ filter.name }}">{{ filter.expression | safe }}</SYSTEM>
                     {% endfor %}
                 </TDLMESSAGE>
             </TDL>
