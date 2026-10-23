@@ -1,5 +1,9 @@
 # Release History
 
+### Version: v7.10 [23-Oct-2026]
+Fixed:
+* Some tools were returing blank output due to TDL expression breaking, now resolved
+
 ### Version: v7.9 [18-Oct-2026]
 
 Fixed:
