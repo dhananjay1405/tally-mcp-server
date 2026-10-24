@@ -1,5 +1,10 @@
 # Release History
 
+### Version: v7.11 [24-Oct-2026]
+
+Fixed:
+* Fixed double quote escaping in ledger and stock item names for the *ledger-account* and *stock-item-account* tools, including filters and opening balances.
+
 ### Version: v7.10 [23-Oct-2026]
 Fixed:
 * Some tools were returing blank output due to TDL expression breaking, now resolved

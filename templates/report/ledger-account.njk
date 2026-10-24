@@ -78,7 +78,7 @@
                         <XMLTAG>voucher_type</XMLTAG>
                     </FIELD>
                     <FIELD NAME="FldAmountOp">
-                        <SET>if $$IsDebit:$OpeningBalance:Ledger:"{{ ledgerName }}" then -$$NumValue:$OpeningBalance:Ledger:"{{ ledgerName }}" else $$NumValue:$OpeningBalance:Ledger:"{{ ledgerName }}"</SET>
+                        <SET>if $$IsDebit:$OpeningBalance:Ledger:{{ ledgerName | escapeDoubleQuotesTDL }} then -$$NumValue:$OpeningBalance:Ledger:{{ ledgerName | escapeDoubleQuotesTDL }} else $$NumValue:$OpeningBalance:Ledger:{{ ledgerName | escapeDoubleQuotesTDL }}</SET>
                         <XMLTAG>amount</XMLTAG>
                     </FIELD>
                     <COLLECTION NAME="MyCollection">
@@ -87,8 +87,8 @@
                         <FILTER>FilterLedger,FilterExcludeInventoryVch,FilterExcludeOrderVch,FilterCancelledVouchers,FilterOptionalVouchers</FILTER>
                     </COLLECTION>
                     <SYSTEM TYPE="Formulae" NAME="FilterLedger">NOT $$IsEmpty:$AllLedgerEntries[1,@@FilterLedgerEqual].LedgerName</SYSTEM>
-                    <SYSTEM TYPE="Formulae" NAME="FilterLedgerEqual">$$IsEqual:$LedgerName:"{{ ledgerName }}"</SYSTEM>
-                    <SYSTEM TYPE="Formulae" NAME="FilterNotLedgerEqual">NOT $$IsEqual:$LedgerName:"{{ ledgerName }}"</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterLedgerEqual">$$IsEqual:$LedgerName:{{ ledgerName | escapeDoubleQuotesTDL }}</SYSTEM>
+                    <SYSTEM TYPE="Formulae" NAME="FilterNotLedgerEqual">NOT $$IsEqual:$LedgerName:{{ ledgerName | escapeDoubleQuotesTDL }}</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeInventoryVch">NOT $$IsInventoryVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterExcludeOrderVch">NOT $$IsOrderVch:$VoucherTypeName</SYSTEM>
                     <SYSTEM TYPE="Formulae" NAME="FilterCancelledVouchers">NOT $IsCancelled</SYSTEM>

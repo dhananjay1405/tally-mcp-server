@@ -13,6 +13,7 @@ const nEnv = new nunjucks.Environment();
 nEnv.addFilter('formatDate', (dt: Date, format: string) => {
     return utility.Date.format(dt, format);
 });
+nEnv.addFilter('escapeDoubleQuotesTDL', escapeDoubleQuotesTDL);
 
 
 export function escapeDoubleQuotesTDL(expr: string): string {
