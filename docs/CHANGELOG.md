@@ -1,5 +1,11 @@
 # Release History
 
+### Version: v7.12 [25-Oct-2026]
+
+Fixed:
+* Special characters `&`, `<` and `>` in ledger and stock item names were not escaped for the *ledger-account* and *stock-item-account* tools, which broke the Tally XML request. These characters are now escaped, including filters and opening balances.
+* *query-collection* was not handling the same special characters in field expressions (for example `Reserves & Surplus`), which broke the collection request. Expressions are now escaped so the request is valid XML.
+
 ### Version: v7.11 [24-Oct-2026]
 
 Fixed:

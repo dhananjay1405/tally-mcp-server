@@ -9,7 +9,7 @@ const tally_port = parseInt(process.env.TALLY_PORT || '9000'); // default to 900
 const tally_host = process.env.TALLY_HOST || 'localhost'; // default to localhost
 const lstPullReport: m.ModelPullReportInfo[] = lstReportConfig;
 
-const nEnv = new nunjucks.Environment();
+const nEnv = new nunjucks.Environment(null, { autoescape: false });
 nEnv.addFilter('formatDate', (dt: Date, format: string) => {
     return utility.Date.format(dt, format);
 });
@@ -24,12 +24,21 @@ export function escapeDoubleQuotesTDL(expr: string): string {
     "8X3 = $$StrByCharCode:34 + "8X3"
     8X3" = "8X3" + $$StrByCharCode:34
     */
-   if (!expr.includes('"')) // no double quotes, safe to wrap in double quotes
-    return `"${expr}"`;
-   else if (expr.includes('"') && !expr.includes(`'`)) // contains double quotes but no single quotes, safe to wrap in single quotes
-    return `'${expr}'`;
-   else // replace instance of double quotes with $$StrByCharCode:34 and concatenate the string parts
-    return '("' + expr.replace(/\"/g, '" + \$\$\$StrByCharCode:34 + "') +  '")'
+
+    let retval = expr;
+
+    // escape special XML characters excluding single and double quotes
+    retval = retval.replace(/\&/g, '&amp;');
+    retval = retval.replace(/\</g, '&lt;');
+    retval = retval.replace(/\>/g, '&gt;');
+
+    if (!retval.includes('"')) // no double quotes, safe to wrap in double quotes
+        retval = `"${retval}"`;
+    else if (retval.includes('"') && !retval.includes(`'`)) // contains double quotes but no single quotes, safe to wrap in single quotes
+        retval = `'${retval}'`;
+    else // replace instance of double quotes with $$StrByCharCode:34 and concatenate the string parts
+        retval = '("' + retval.replace(/\"/g, '" + \$\$\$StrByCharCode:34 + "') + '")'
+    return retval;
 }
 
 export function renameObjectArrayProperties(source: any[], keyMap: Map<string, string>): any[] {
