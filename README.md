@@ -61,6 +61,8 @@ D:\Software\Tally MCP Server
 A sample setup for few popular tools is demonstrated.
 
 ### Claude Desktop
+Video tutorial: [Claude Desktop (extension)](https://www.youtube.com/watch?v=0xeVSe2otJM)
+
 Desktop version of Claude AI supports loading of local MCP server. Ensure you have Pro / Team / Max / Enterprise subscription of Claude, which supports higher limit compared to Free. MCP makes multiple calls to Tally for validation and inference, which might exhaust free limits quickly. Download Claude Desktop from following link
 [claude.ai/download](https://claude.ai/download)
 
@@ -109,9 +111,9 @@ Verify by clicking on Tools button and check if Tally Prime appears in the list 
 
 <image src="https://excelkida.com/image/github/claude-desktop-tally-mcp-server-tool-display.png" height="595" width="722" />
 
-Video tutorial: [Claude Desktop (extension)](https://www.youtube.com/watch?v=0xeVSe2otJM)
-
 ### ChatGPT Desktop
+Video tutorial: [ChatGPT Desktop](https://www.youtube.com/watch?v=RU1xmQilO1o)
+
 Download &amp; install ChatGPT Desktop from Microsoft Store. Login to it.
 
 Go to Edit &gt; Settings
@@ -130,8 +132,6 @@ In the MCP settings page enter / apply below options or values <br>
 Click **Save** button
 
 Close &amp; Re-Open ChatGPT Desktop app
-
-Video tutorial: [ChatGPT Desktop](https://www.youtube.com/watch?v=RU1xmQilO1o)
 
 ## Setup (Cloud)
 This mode of setup is to be used, when using browser-based MCP client like ChatGPT, Claude AI, Copilot, OR mobile-based app for these LLM which cannot access Tally Prime running inside local PC. In this scenario, MCP Server needs to run as web-server, internally connected to Tally securely. Setup is quite complicated, and is covered in detail in **docs** folder of this project.
