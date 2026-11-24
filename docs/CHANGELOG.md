@@ -1,5 +1,10 @@
 # Release History
 
+### Version: v7.13 [24-Nov-2026]
+
+Added:
+* Tools **voucher-receipt**, **voucher-payment**, and **voucher-contra** to create Receipt, Payment, and Contra vouchers in Tally Prime, including bank allocation details where applicable.
+
 ### Version: v7.12 [25-Oct-2026]
 
 Fixed:

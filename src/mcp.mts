@@ -1009,6 +1009,413 @@ export async function registerMcpServer(): Promise<McpServer> {
       }
     );
 
+    mcpServer.registerTool(
+      'voucher-receipt',
+      {
+        title: 'Receipt Voucher',
+        description: `creates receipt voucher(s) in Tally Prime`,
+        inputSchema: {
+          targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
+          vouchers: z.array(z.object({
+            isoptional: z.boolean().optional().default(false).describe('indicates if the voucher is optional, to be used when user wants to be on safe side, if this option is set to true then notify user that they need to manually make it regular to effect the books of accounts'),
+            date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('voucher date'),
+            voucherType: z.string().describe('voucher type validate using list-master tool with collection as vouchertype with parent as Receipt'),
+            voucherNumber: z.string().optional().describe('voucher number for the voucher'),
+            narration: z.string().optional().describe('narration for the voucher'),
+            ledgerCashBank: z.string().describe('ledger under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c" validate it using list-master tool with collection as ledger'),
+            receiptAmount: z.number().describe('receipt amount for the voucher, should always be negative since it is debit'),
+            bankAllocations: z.array(z.object({
+              instrumentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('instrument date, applicable for post dates cheque; defaults to the voucher date if not assigned'),
+              transactionType: z.enum(['ATM', 'Card', 'Cash', 'Cheque/DD', 'ECS', 'e-Fund Transfer', 'Electronic Cheque', 'Electronic DD/PO', 'UPI', 'Others']).describe('transaction type'),
+              virtualPaymentAddress: z.string().optional().describe('virtual payment address required for UPI transaction type'),
+              instrumentNumber: z.string().optional().describe('instrument number, like cheque number or DD number or UTR for NEFT / RTGS or other transaction reference number'),
+              bankName: z.string().describe('bank name').optional(),
+              amount: z.number().describe('amount for the bank allocation, positive for credit and negative for debit')
+            })).describe('bank allocations for the ledger entry. applicable only for the ledger with primary group of parent as Bank Accounts, Cash-in-Hand, Bank OD A/c, Bank OCC A/c'),
+            accountingEntry: z.array(z.object({
+              ledgerName: z.string().describe('ledger name validate it using list-master tool with collection as ledger'),
+              amount: z.number().describe('amount for the ledger, positive for credit and negative for debit, mostly it should be positive since it represents the credit portion of the voucher, except negative for rounding or adjustment or any other things')
+            })).min(1).describe('credit portion of accounting entries for the voucher, other than cash bank entries, for any debit side adjustment or discount kindly use negative amount, total of the amount of accounting entry and receipt amount should be zero')
+          }))
+        },
+        annotations: {
+          readOnlyHint: false,
+          openWorldHint: false,
+          destructiveHint: true,
+          idempotentHint: false
+        }
+      },
+      async (args) => {
+        try {
+
+          let lstTargetVouchers: m.VoucherAccounting[] = args.vouchers;
+
+          // Validate voucher type exists in the system before proceeding by iterating through individual vouchers
+          let lstVoucherTypeNames = lstTargetVouchers.map(v => v.voucherType);
+          let lstInvalidVoucherTypes: string[] = await validateVoucherTypeParent(lstVoucherTypeNames, 'Receipt', args.targetCompany);
+          if (lstInvalidVoucherTypes.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: JSON.stringify(`Invalid Voucher Type(s): ${lstInvalidVoucherTypes.join(', ')}`) }]
+            };
+          }
+
+          // check if valid date is entered for each voucher, convert date property to Date object in the vouchers object
+          for (const voucher of lstTargetVouchers) {
+            const voucherDate = typeof voucher.date === 'string' ? utility.Date.parse(voucher.date, 'yyyy-MM-dd') : undefined;
+            if (voucherDate === null || voucherDate === undefined) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`Invalid date for voucher: ${voucher.date}`) }]
+              };
+            }
+            voucher.date = voucherDate;
+          }
+
+          // obtain list of ledgers under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c" for validation purposes
+          let lstCashBankLedgers = (await queryCollection('Ledger', ['Name'], new Map<string, string>([["fltrIsCashBankLedger", '$$IsEqual:$_PrimaryGroup:"Cash-in-Hand" OR $$IsEqual:$_PrimaryGroup:"Bank Accounts" OR $$IsEqual:$_PrimaryGroup:"Bank OD A/c" OR $$IsEqual:$_PrimaryGroup:"Bank OCC A/c"']]), args.targetCompany)).map(l => l.Name);
+
+          // iterate through each bank allocation (first item of the accounting entry) and validate if amount totals to the parent accounting entry amount, and the ledger should have primary group as Bank Accounts
+          for (const voucher of args.vouchers) {
+
+            // validate if the ledger of the first accounting entry is under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c"
+            if (!lstCashBankLedgers.includes(voucher.ledgerCashBank)) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`cash bank ledger (${voucher.ledgerCashBank}) is not under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c" for voucher: ${voucher.date}`) }]
+              };
+            }
+
+            // validate if receipt is not debit (should be negative)
+            if (voucher.receiptAmount >= 0) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`Receipt amount (${voucher.receiptAmount}) must be negative since it is debit`) }]
+              };
+            }
+
+            // validate if receiptAmount matches the total of bank allocations
+            const totalBankAllocationAmount = voucher.bankAllocations.reduce((sum, allocation) => sum + allocation.amount, 0) || 0;
+
+            if (totalBankAllocationAmount !== voucher.receiptAmount) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`Total bank allocation amount (${totalBankAllocationAmount}) does not match the receipt amount (${voucher.receiptAmount}) for voucher: ${voucher.date}`) }]
+              };
+            }
+          }
+
+          // add receiptAmount, ledgerCashBank, and bankAllocations to each voucher under accountingEntry as first item of the array
+          for (let i = 0; i < lstTargetVouchers.length; i++) {
+            lstTargetVouchers[i].accountingEntry.unshift({
+              ledgerName: args.vouchers[i].ledgerCashBank,
+              amount: args.vouchers[i].receiptAmount,
+              bankAllocations: args.vouchers[i].bankAllocations
+            });
+          }
+
+          // validate if all the ledger names exist in the system before proceeding by iterating through individual vouchers and accountingEntry lines
+          let lstLedgerNames = args.vouchers.map(v => v.accountingEntry.map(e => e.ledgerName)).flat();
+          let invalidLedgerNames: string[] = await validateLedgers(lstLedgerNames, args.targetCompany);
+          if (invalidLedgerNames.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: JSON.stringify(`Invalid Ledger(s): ${invalidLedgerNames.join(', ')}`) }]
+            };
+          }
+
+          // iterate through each voucher and strip extra decimal places for accounting entry amounts
+          for (const voucher of lstTargetVouchers) {
+            await stripExtraDecimalVoucherAmount(voucher);
+          }
+
+          // validate if the total of accounting entries sum to zero for each voucher
+          for (const voucher of lstTargetVouchers) {
+            const isValid = await validateVoucherDebitCreditBalancing(voucher);
+            if (!isValid) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify('accountingEntry Debit and Credit do not balance, amount must sum to zero') }]
+              };
+            }
+          }
+
+          let objVoucherInput: Map<string, any> = new Map();
+          objVoucherInput.set('vouchers', lstTargetVouchers);
+          if (args.targetCompany) objVoucherInput.set('targetCompany', args.targetCompany);
+          const result = await importMastersTransactions('voucher-receipt-payment-contra', objVoucherInput);
+
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result) }]
+          };
+        } catch (err) {
+          return {
+            isError: true,
+            content: [{ type: 'text', text: JSON.stringify(err) }]
+          };
+        }
+      }
+    );
+
+    mcpServer.registerTool(
+      'voucher-payment',
+      {
+        title: 'Payment Voucher',
+        description: `creates payment voucher(s) in Tally Prime`,
+        inputSchema: {
+          targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
+          vouchers: z.array(z.object({
+            isoptional: z.boolean().optional().default(false).describe('indicates if the voucher is optional, to be used when user wants to be on safe side, if this option is set to true then notify user that they need to manually make it regular to effect the books of accounts'),
+            date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('voucher date'),
+            voucherType: z.string().describe('voucher type validate using list-master tool with collection as vouchertype with parent as Payment'),
+            voucherNumber: z.string().optional().describe('voucher number for the voucher'),
+            narration: z.string().optional().describe('narration for the voucher'),
+            ledgerCashBank: z.string().describe('ledger under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c" validate it using list-master tool with collection as ledger'),
+            paymentAmount: z.number().describe('payment amount for the voucher, should always be positive since it is credit'),
+            bankAllocations: z.array(z.object({
+              instrumentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('instrument date, applicable for post dates cheque; defaults to the voucher date if not assigned'),
+              transactionType: z.enum(['ATM', 'Card', 'Cash', 'Cheque/DD', 'ECS', 'e-Fund Transfer', 'Electronic Cheque', 'Electronic DD/PO', 'UPI', 'Others']).describe('transaction type'),
+              virtualPaymentAddress: z.string().optional().describe('virtual payment address required for UPI transaction type'),
+              instrumentNumber: z.string().optional().describe('instrument number, like cheque number or DD number or UTR for NEFT / RTGS or other transaction reference number'),
+              bankName: z.string().describe('bank name').optional(),
+              amount: z.number().describe('amount for the bank allocation, positive for credit and negative for debit')
+            })).describe('bank allocations for the ledger entry. applicable only for the ledger with primary group of parent as Bank Accounts, Cash-in-Hand, Bank OD A/c, Bank OCC A/c'),
+            accountingEntry: z.array(z.object({
+              ledgerName: z.string().describe('ledger name validate it using list-master tool with collection as ledger'),
+              amount: z.number().describe('amount for the ledger, positive for credit and negative for debit, mostly it should be negative since it represents the debit portion of the voucher, except positive for rounding or adjustment or any other things')
+            })).min(1).describe('debit portion of accounting entries for the voucher, other than cash bank entries, for any debit side adjustment or discount kindly use positive amount, total of the amount of accounting entry and receipt amount should be zero')
+          }))
+        },
+        annotations: {
+          readOnlyHint: false,
+          openWorldHint: false,
+          destructiveHint: true,
+          idempotentHint: false
+        }
+      },
+      async (args) => {
+        try {
+
+          let lstTargetVouchers: m.VoucherAccounting[] = args.vouchers;
+
+          // Validate voucher type exists in the system before proceeding by iterating through individual vouchers
+          let lstVoucherTypeNames = lstTargetVouchers.map(v => v.voucherType);
+          let lstInvalidVoucherTypes: string[] = await validateVoucherTypeParent(lstVoucherTypeNames, 'Payment', args.targetCompany);
+          if (lstInvalidVoucherTypes.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: JSON.stringify(`Invalid Voucher Type(s): ${lstInvalidVoucherTypes.join(', ')}`) }]
+            };
+          }
+
+          // check if valid date is entered for each voucher, convert date property to Date object in the vouchers object
+          for (const voucher of lstTargetVouchers) {
+            const voucherDate = typeof voucher.date === 'string' ? utility.Date.parse(voucher.date, 'yyyy-MM-dd') : undefined;
+            if (voucherDate === null || voucherDate === undefined) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`Invalid date for voucher: ${voucher.date}`) }]
+              };
+            }
+            voucher.date = voucherDate;
+          }
+
+          // obtain list of ledgers under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c" for validation purposes
+          let lstCashBankLedgers = (await queryCollection('Ledger', ['Name'], new Map<string, string>([["fltrIsCashBankLedger", '$$IsEqual:$_PrimaryGroup:"Cash-in-Hand" OR $$IsEqual:$_PrimaryGroup:"Bank Accounts" OR $$IsEqual:$_PrimaryGroup:"Bank OD A/c" OR $$IsEqual:$_PrimaryGroup:"Bank OCC A/c"']]), args.targetCompany)).map(l => l.Name);
+
+          // iterate through each bank allocation (first item of the accounting entry) and validate if amount totals to the parent accounting entry amount, and the ledger should have primary group as Bank Accounts
+          for (const voucher of args.vouchers) {
+
+            // validate if the ledger of the first accounting entry is under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c"
+            if (!lstCashBankLedgers.includes(voucher.ledgerCashBank)) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`cash bank ledger (${voucher.ledgerCashBank}) is not under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c" for voucher: ${voucher.date}`) }]
+              };
+            }
+
+            // validate if payment is not credit (should be positive)
+            if (voucher.paymentAmount <= 0) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`Payment amount (${voucher.paymentAmount}) must be positive since it is credit`) }]
+              };
+            }
+
+            // validate if receiptAmount matches the total of bank allocations
+            const totalBankAllocationAmount = voucher.bankAllocations.reduce((sum, allocation) => sum + allocation.amount, 0) || 0;
+
+            if (totalBankAllocationAmount !== voucher.paymentAmount) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`Total bank allocation amount (${totalBankAllocationAmount}) does not match the payment amount (${voucher.paymentAmount}) for voucher: ${voucher.date}`) }]
+              };
+            }
+          }
+
+          // add receiptAmount, ledgerCashBank, and bankAllocations to each voucher under accountingEntry as first item of the array
+          for (let i = 0; i < lstTargetVouchers.length; i++) {
+            lstTargetVouchers[i].accountingEntry.unshift({
+              ledgerName: args.vouchers[i].ledgerCashBank,
+              amount: args.vouchers[i].paymentAmount,
+              bankAllocations: args.vouchers[i].bankAllocations
+            });
+          }
+
+          // validate if all the ledger names exist in the system before proceeding by iterating through individual vouchers and accountingEntry lines
+          let lstLedgerNames = args.vouchers.map(v => v.accountingEntry.map(e => e.ledgerName)).flat();
+          let invalidLedgerNames: string[] = await validateLedgers(lstLedgerNames, args.targetCompany);
+          if (invalidLedgerNames.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: JSON.stringify(`Invalid Ledger(s): ${invalidLedgerNames.join(', ')}`) }]
+            };
+          }
+
+          // iterate through each voucher and strip extra decimal places for accounting entry amounts
+          for (const voucher of lstTargetVouchers) {
+            await stripExtraDecimalVoucherAmount(voucher);
+          }
+
+          // validate if the total of accounting entries sum to zero for each voucher
+          for (const voucher of lstTargetVouchers) {
+            const isValid = await validateVoucherDebitCreditBalancing(voucher);
+            if (!isValid) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify('accountingEntry Debit and Credit do not balance, amount must sum to zero') }]
+              };
+            }
+          }
+
+          let objVoucherInput: Map<string, any> = new Map();
+          objVoucherInput.set('vouchers', lstTargetVouchers);
+          if (args.targetCompany) objVoucherInput.set('targetCompany', args.targetCompany);
+          const result = await importMastersTransactions('voucher-receipt-payment-contra', objVoucherInput);
+
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result) }]
+          };
+        } catch (err) {
+          return {
+            isError: true,
+            content: [{ type: 'text', text: JSON.stringify(err) }]
+          };
+        }
+      }
+    );
+
+    mcpServer.registerTool(
+      'voucher-contra',
+      {
+        title: 'Contra Voucher',
+        description: `creates a contra voucher in Tally Prime used for transferring funds between cash and bank accounts`,
+        inputSchema: {
+          targetCompany: z.string().optional().describe('optional company name. leave it blank or skip this to choose for default company. validate it using list-master tool with collection as company if specified'),
+          vouchers: z.array(z.object({
+            isoptional: z.boolean().optional().default(false).describe('indicates if the voucher is optional, to be used when user wants to be on safe side, if this option is set to true then notify user that they need to manually make it regular to effect the books of accounts'),
+            date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('voucher date'),
+            voucherType: z.string().optional().default('Journal').describe('voucher type validate using list-master tool with collection as vouchertype'),
+            voucherNumber: z.string().optional().describe('voucher number for the voucher'),
+            narration: z.string().optional().describe('narration for the voucher'),
+            accountingEntry: z.array(z.object({
+              ledgerName: z.string().describe('ledger name validate it using list-master tool with collection as ledger'),
+              amount: z.number().describe('amount for the ledger, positive for credit and negative for debit')
+            })).min(2).max(2).describe('accounting entries for the voucher, two entries required, credit portion first and next debit portion, sum of amount should be zero')
+          }))
+        },
+        annotations: {
+          readOnlyHint: false,
+          openWorldHint: false,
+          destructiveHint: true,
+          idempotentHint: false
+        }
+      },
+      async (args) => {
+        try {
+
+          let lstTargetVouchers: m.VoucherAccounting[] = args.vouchers;
+
+          // Validate voucher type exists in the system before proceeding by iterating through individual vouchers
+          let lstVoucherTypeNames = lstTargetVouchers.map(v => v.voucherType);
+          let lstInvalidVoucherTypes: string[] = await validateVoucherTypeParent(lstVoucherTypeNames, 'Contra', args.targetCompany);
+          if (lstInvalidVoucherTypes.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: JSON.stringify(`Invalid Voucher Type(s): ${lstInvalidVoucherTypes.join(', ')}`) }]
+            };
+          }
+
+          // check if valid date is entered for each voucher, convert date property to Date object in the vouchers object
+          for (const voucher of lstTargetVouchers) {
+            const voucherDate = typeof voucher.date === 'string' ? utility.Date.parse(voucher.date, 'yyyy-MM-dd') : undefined;
+            if (voucherDate === null || voucherDate === undefined) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(`Invalid date for voucher: ${voucher.date}`) }]
+              };
+            }
+            voucher.date = voucherDate;
+          }
+
+          // validate if all the ledger names exist in the system before proceeding by iterating through individual vouchers and accountingEntry lines
+          let lstLedgerNames = args.vouchers.map(v => v.accountingEntry.map(e => e.ledgerName)).flat();
+          let invalidLedgerNames: string[] = await validateLedgers(lstLedgerNames, args.targetCompany);
+          if (invalidLedgerNames.length > 0) {
+            return {
+              isError: true,
+              content: [{ type: 'text', text: JSON.stringify(`Invalid Ledger(s): ${invalidLedgerNames.join(', ')}`) }]
+            };
+          }
+
+          // obtain list of ledgers under the primary group "Cash-in-Hand", "Bank Accounts", "Bank OD A/c", "Bank OCC A/c" for validation purposes
+          let lstCashBankLedgers = (await queryCollection('Ledger', ['Name'], new Map<string, string>([["fltrIsCashBankLedger", '$$IsEqual:$_PrimaryGroup:"Cash-in-Hand" OR $$IsEqual:$_PrimaryGroup:"Bank Accounts" OR $$IsEqual:$_PrimaryGroup:"Bank OD A/c" OR $$IsEqual:$_PrimaryGroup:"Bank OCC A/c"']]), args.targetCompany)).map(l => l.Name);
+
+          // check if the ledgers used in the vouchers are valid cash/bank ledgers
+          for (const voucher of lstTargetVouchers) {
+            for (const entry of voucher.accountingEntry) {
+              if (!lstCashBankLedgers.includes(entry.ledgerName)) {
+                return {
+                  isError: true,
+                  content: [{ type: 'text', text: JSON.stringify(`Invalid Cash/Bank Ledger: ${entry.ledgerName}`) }]
+                };
+              }
+            }
+          }
+
+          // iterate through each voucher and strip extra decimal places for accounting entry amounts
+          for (const voucher of lstTargetVouchers) {
+            await stripExtraDecimalVoucherAmount(voucher);
+          }
+
+          // validate if the total of accounting entries sum to zero for each voucher
+          for (const voucher of lstTargetVouchers) {
+            const isValid = await validateVoucherDebitCreditBalancing(voucher);
+            if (!isValid) {
+              return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify('accountingEntry Debit and Credit do not balance, amount must sum to zero') }]
+              };
+            }
+          }
+
+          let objVoucherInput: Map<string, any> = new Map();
+          objVoucherInput.set('vouchers', lstTargetVouchers);
+          if (args.targetCompany) objVoucherInput.set('targetCompany', args.targetCompany);
+          const result = await importMastersTransactions('voucher-receipt-payment-contra', objVoucherInput);
+
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result) }]
+          };
+        } catch (err) {
+          return {
+            isError: true,
+            content: [{ type: 'text', text: JSON.stringify(err) }]
+          };
+        }
+      }
+    );
+
   }
 
   return mcpServer;
