@@ -18,12 +18,12 @@ Port = 9000
 
 ## Download
 Avoid cloning repository directly. Utility is available for download (with required dependencies) on below link <br>
-[https://excelkida.com/resource/tally-mcp-server-v7.12.zip](https://excelkida.com/resource/tally-mcp-server-v7.12.zip)
+[https://excelkida.com/resource/tally-mcp-server-v7.13.zip](https://excelkida.com/resource/tally-mcp-server-v7.13.zip)
 
 One-click installer **extension** for **Claude Desktop**<br>
-[https://excelkida.com/resource/tally-mcp-server-v7.12.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.12.mcpb)
+[https://excelkida.com/resource/tally-mcp-server-v7.13.mcpb](https://excelkida.com/resource/tally-mcp-server-v7.13.mcpb)
 
-Last updated: version **7.12** [25-Oct-2026]
+Last updated: version **7.13** [24-Nov-2026]
 
 Refer docs/CHANGELOG.md for details
 
@@ -43,6 +43,7 @@ Implementation was tested on below AI platform
 |--|--|--|
 |Claude AI| :heavy_check_mark: | :heavy_check_mark: |
 |ChatGPT| :heavy_check_mark: | :heavy_check_mark: |
+|Gemini|| :heavy_check_mark: |
 |Grok|| :heavy_check_mark: |
 |Mistral|| :heavy_check_mark: |
 |LM Studio| :heavy_check_mark: ||
@@ -72,25 +73,33 @@ Go to menu &gt; File &gt; Settings
 
 <image src="https://excelkida.com/image/github/claude-desktop-settings-menu.png" height="185" width="335">
 
-Extensions &gt; Advance Settings
+Desktop app &gt; Extensions &gt; Manage
 
-<image src="https://excelkida.com/image/github/claude-desktop-settings-extension.png" height="553" width="928">
+<image src="https://excelkida.com/image/github/claude-desktop-setting-app.png" height="788" width="1040" />
+
+Click **Advanced Settings** button
+
+<image src="https://excelkida.com/image/github/claude-desktop-extension-advance-settings.png" height="932" width="1072" />
 
 Click on install extension button
 
-<image src="https://excelkida.com/image/github/claude-desktop-extension-page.png" height="619" width="868">
+<image src="https://excelkida.com/image/github/claude-desktop-extension-page-1.png" height="1306" width="1580">
 
 Browse the extension file (with file extension mcpb) download at the start
 
-<image src="https://excelkida.com/image/github/claude-desktop-extension-install.png" height="843" width="696">
+<image src="https://excelkida.com/image/github/claude-desktop-extension-install-1.png" height="828" width="1026">
 
 A dialog window will appear asking *Do you want to install Tally Prime?* click **Install** button, which would install the Tally MCP Server
 
-#### Installation via Config file (via Developer menu)
+#### Installation via Config file
 
-Go to menu &gt; File &gt; Settings &gt; Developer
+Go to menu &gt; File &gt; Settings &gt; Desktop app &gt; Extensions > Manage
 
-<image src="https://excelkida.com/image/github/claude-desktop-developer-setting.png" height="751" width="1045" />
+<image src="https://excelkida.com/image/github/claude-desktop-setting-app.png" height="788" width="1040" />
+
+This will open Extension management page. Click **Edit config** button
+
+<image src="https://excelkida.com/image/github/claude-desktop-local-mcp.png" height="908" width="1068" />
 
 This will open My Computer window. Right click and edit **claude_desktop_config.json** file (via Notepad) with as below JSON
 ```json
@@ -140,7 +149,7 @@ This mode of setup is to be used, when using browser-based MCP client like ChatG
 
 ## Available Tools
 
-This server currently exposes 20 MCP tools.
+This server currently exposes 23 MCP tools.
 
 ### metadata-collection
 Returns metadata for supported collections.
@@ -253,6 +262,9 @@ JSON: `{ "tableID": "..." }` with columns:
 1. `net_credit`
 1. `closing_balance` (number) [**negative** = Debit / **positive** = Credit]
 
+**Sample Prompt**
+I need trial balance for FY 2025-26 from my tally
+
 ### profit-loss
 Fetches profit and loss data for period.
 
@@ -269,6 +281,9 @@ JSON: `{ "tableID": "..." }` with columns:
 1. `group_name`
 1. `closing_balance` (number) [**negative** = Debit / **positive** = Credit]
 
+**Sample Prompt**
+Analyze profit loss for FY 2025-26 from my tally and display key ratio like Gross Profit Ratio, Net Profit Ratio, etc
+
 ### balance-sheet
 Fetches balance sheet data for period.
 
@@ -284,6 +299,9 @@ JSON: `{ "tableID": "..." }` with columns:
 1. `ledger_name`
 1. `group_name`
 1. `closing_balance` (number) [**negative** = Debit / **positive** = Credit]
+
+**Sample Prompt**
+Analyze balance sheet for FY 2025-26 from my tally and help me understand how is my business performing with some key ratios
 
 ### stock-summary
 Fetches stock item summary for period.
@@ -309,6 +327,9 @@ JSON: `{ "tableID": "..." }` with columns:
 1. `closing_quantity` (number)
 1. `closing_value` (number) [**negative** = Debit / **positive** = Credit]
 
+**Sample Prompt**
+Analyze stock summary for FY 2025-26 in tally and help me identify my top 10 selling items value-wise
+
 ### ledger-balance
 Returns ledger closing balance as on date.
 
@@ -322,6 +343,9 @@ Returns ledger closing balance as on date.
 **Output**
 JSON: `{ "amount": number }` where negative = Debit and positive = Credit.
 
+**Sample Prompt**
+What is closing balance of ledger Amazon as on 31 mar 2026 in tally
+
 ### stock-item-balance
 Returns stock item closing quantity as on date.
 
@@ -334,6 +358,9 @@ Returns stock item closing quantity as on date.
 
 **Output**
 JSON: `{ "quantity": number, "unit_of_measurement": string }` when found.
+
+**Sample Prompt**
+How many units of Drift Runner Men Black shoes are in stock as on today in my tally
 
 ### bills-outstanding
 Fetches receivable/payable bill-wise outstanding as on date.
@@ -352,6 +379,9 @@ JSON: `{ "tableID": "..." }` with columns:
 1. `outstanding_amount`
 1. `party_name`
 1. `overdue_days`
+
+**Sample Prompt**
+Analyze customer outstanding as on 31 Dec 2026 and create a pie chart of it from tally
 
 ### ledger-account
 Fetches ledger account statement for period.
@@ -375,6 +405,9 @@ JSON: `{ "tableID": "..." }` with columns:
 1. `amount` (number) [**negative** = Debit / **positive** = Credit]
 1. `narration`
 
+**Sample Prompt**
+Analyze Amazon ledger for FY 2025-26 and create a column chart of monthly sales from tally
+
 ### stock-item-account
 Fetches stock item account statement for period.
 
@@ -397,6 +430,9 @@ JSON: `{ "tableID": "..." }` with columns:
 1. `narration`
 1. `tracking_number`
 1. `voucher_category`
+
+**Sample Prompt**
+Analyze item ledger for Drift Runner Men Black and identify variance in sales price in tally
 
 ### ledger-create-update
 Creates or updates one or more ledger.
@@ -425,6 +461,9 @@ Master ledger object accepts following
 **Output**
 JSON result returned by import operation (success/failure details).
 
+**Sample Prompt**
+Create a ledger for the customer Amazon with address ... and GST number ... in tally
+
 ### delete-master
 Delete one (or more) masters from Tally
 
@@ -437,6 +476,9 @@ Delete one (or more) masters from Tally
 
 **Output**
 JSON result returned by delete operation (count of deleted, skipped, etc).
+
+**Sample Prompt**
+Delete ledger Amazon from my tally
 
 ### voucher-journal
 Creates one (or more) Journal vouchers in Tally.
@@ -467,6 +509,127 @@ Accounting entry object accepts following
 
 **Output**
 JSON result returned by import operation (success/failure details).
+
+**Sample Prompt**
+Book depreciation on Furniture of 30500 on 31 mar 2022 in tally
+
+### voucher-receipt
+Creates one or more Receipt vouchers in Tally.
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name (defaults to active company)|
+|vouchers|Array of receipt voucher objects to create|
+
+Receipt voucher object accepts following:
+
+|Property|Description|
+|--|--|
+|isoptional (optional)|Set to `true` to create an Optional voucher. It must be manually made regular in Tally to affect the books of accounts.|
+|date|Voucher date in YYYY-MM-DD|
+|voucherType|Receipt voucher type; must belong to the Receipt parent|
+|voucherNumber (optional)|Voucher number|
+|narration (optional)|Narration text|
+|ledgerCashBank|Ledger under `Cash-in-Hand`, `Bank Accounts`, `Bank OD A/c`, or `Bank OCC A/c`|
+|receiptAmount|Cash/bank entry amount; must be negative (debit)|
+|bankAllocations|Array of bank allocation objects; the allocation amounts must sum to `receiptAmount`|
+|accountingEntry|Array of other ledger entries (at least one); amounts must balance with `receiptAmount` so the voucher total is zero|
+
+Bank allocation object accepts following:
+
+|Property|Description|
+|--|--|
+|instrumentDate (optional)|Instrument date in YYYY-MM-DD; defaults to the voucher date|
+|transactionType|One of `ATM`, `Card`, `Cash`, `Cheque/DD`, `ECS`, `e-Fund Transfer`, `Electronic Cheque`, `Electronic DD/PO`, `UPI`, `Others`|
+|virtualPaymentAddress (optional)|Virtual payment address for UPI transactions|
+|instrumentNumber (optional)|Instrument/reference number, such as a cheque number or UTR|
+|bankName (optional)|Bank name|
+|amount|Allocation amount; positive is credit and negative is debit|
+
+Accounting entry object accepts following:
+
+|Property|Description|
+|--|--|
+|ledgerName|Ledger name|
+|amount|Amount for the ledger; positive is credit and negative is debit. The other ledger entries are usually credits.|
+
+**Output**
+JSON result returned by import operation (success/failure details).
+
+**Sample Prompt**
+Book a receipt of 15000 from Amazon in HDFC Bank with Cheque number 156207 on 15-Nov-2021 in tally
+
+### voucher-payment
+Creates one or more Payment vouchers in Tally.
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name (defaults to active company)|
+|vouchers|Array of payment voucher objects to create|
+
+Payment voucher object accepts following:
+
+|Property|Description|
+|--|--|
+|isoptional (optional)|Set to `true` to create an Optional voucher. It must be manually made regular in Tally to affect the books of accounts.|
+|date|Voucher date in YYYY-MM-DD|
+|voucherType|Payment voucher type; must belong to the Payment parent|
+|voucherNumber (optional)|Voucher number|
+|narration (optional)|Narration text|
+|ledgerCashBank|Ledger under `Cash-in-Hand`, `Bank Accounts`, `Bank OD A/c`, or `Bank OCC A/c`|
+|paymentAmount|Cash/bank entry amount; must be positive (credit)|
+|bankAllocations|Array of bank allocation objects; the allocation amounts must sum to `paymentAmount`|
+|accountingEntry|Array of other ledger entries (at least one); amounts must balance with `paymentAmount` so the voucher total is zero|
+
+Bank allocation object accepts the same properties and transaction types documented under [voucher-receipt](#voucher-receipt).
+
+Accounting entry object accepts following:
+
+|Property|Description|
+|--|--|
+|ledgerName|Ledger name|
+|amount|Amount for the ledger; positive is credit and negative is debit. The other ledger entries are usually debits.|
+
+**Output**
+JSON result returned by import operation (success/failure details).
+
+**Sample Prompt**
+Book a cash payment of 15000 to Amazon on 1 dec 2021 in tally
+
+### voucher-contra
+Creates one or more Contra vouchers in Tally for transferring funds between cash and bank accounts.
+
+**Input**
+|Argument|Description|
+|--|--|
+|targetCompany (optional)|Company name (defaults to active company)|
+|vouchers|Array of contra voucher objects to create|
+
+Contra voucher object accepts following:
+
+|Property|Description|
+|--|--|
+|isoptional (optional)|Set to `true` to create an Optional voucher. It must be manually made regular in Tally to affect the books of accounts.|
+|date|Voucher date in YYYY-MM-DD|
+|voucherType (optional)|Contra voucher type; must belong to the Contra parent (defaults to `Journal`)|
+|voucherNumber (optional)|Voucher number|
+|narration (optional)|Narration text|
+|accountingEntry|Exactly two cash/bank ledger entries: credit entry first, then debit entry. Amounts must sum to zero.|
+
+Accounting entry object accepts following:
+
+|Property|Description|
+|--|--|
+|ledgerName|Cash/bank ledger name; must be under `Cash-in-Hand`, `Bank Accounts`, `Bank OD A/c`, or `Bank OCC A/c`|
+|amount|Amount for the ledger; positive is credit and negative is debit|
+
+**Output**
+JSON result returned by import operation (success/failure details).
+
+**Sample Prompt**
+Book a cash withdrawl of 5000 from HDF bank on 15-dec-2021 in tally
 
 ### set-company
 Sets active company context in Tally Prime.

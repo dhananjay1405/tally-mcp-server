@@ -67,6 +67,16 @@ export interface CreateUpdateDeleteStatus {
 export interface VoucherAccountingEntry {
     ledgerName: string;
     amount: number;
+    bankAllocations?: VoucherBankAllocation[];
+}
+
+export interface VoucherBankAllocation {
+    amount: number;
+    instrumentDate?: string | Date;
+    transactionType?: string;
+    instrumentNumber?: string;
+    bankName?: string;
+    virtualPaymentAddress?: string;
 }
 
 export interface VoucherBase {
